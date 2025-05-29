@@ -11,12 +11,12 @@ export default function NavbarLogo() {
       >
         <Image 
           src="/logo.png" 
-          alt="Notes Aid Logo" 
+          alt="LearnConnect Logo" 
           width={32} 
           height={32} 
           className="w-8 h-8"
         />
-        <span>Notes Aid</span>
+        <span>LearnConnect</span>
       </Link>
     </div>
   );

@@ -180,7 +180,7 @@ export default function PWAInstaller({ mounted }: PWAInstallerProps) {
           {isIOS && iOSInstructionsVisible && (
             <div className="absolute top-12 right-0 w-64 p-4 bg-base-100 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
               <h4 className="text-sm font-medium mb-2 text-base-content">
-                Install Notes Aid
+                Install LearnConnect
               </h4>
               <ol className="text-xs text-base-content space-y-1">
                 <li>1. Tap the Share button</li>

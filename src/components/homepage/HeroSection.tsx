@@ -136,18 +136,19 @@ const HeroSection = ({ onGetStarted }: { onGetStarted: () => void }) => {
         {/* CTA Buttons */}
         <motion.div variants={itemVariants} className="mb-16">
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <motion.button
-              onClick={onGetStarted}
-              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)" }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:shadow-2xl"
-            >
-              <span className="flex items-center">
-                Get Started
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-50 group-hover:opacity-75 transition-opacity -z-10"></div>
-            </motion.button>
+            <Link href="/auth/register">
+              <motion.button
+          whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)" }}
+          whileTap={{ scale: 0.95 }}
+          className="group relative bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 hover:shadow-2xl"
+              >
+          <span className="flex items-center">
+            Get Started
+            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-50 group-hover:opacity-75 transition-opacity -z-10"></div>
+              </motion.button>
+            </Link>
             
             <Link href="/auth/login">
               <motion.button

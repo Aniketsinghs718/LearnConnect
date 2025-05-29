@@ -22,7 +22,7 @@ export default function AdminSidebar({ activeTab, onTabChange }: AdminSidebarPro
     <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg">
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-center h-16 px-4 border-b">
-          <h1 className="text-xl font-bold text-gray-900">Notes Aid Admin</h1>
+          <h1 className="text-xl font-bold text-gray-900">LearnConnect Admin</h1>
         </div>
         
         <nav className="flex-1 px-4 py-6 space-y-2">

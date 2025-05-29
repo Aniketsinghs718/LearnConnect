@@ -75,7 +75,7 @@ export default function NotificationDropdown({ mounted }: NotificationDropdownPr
       const mockNotifications: Notification[] = [
         {
           id: "1",
-          message: "Welcome to Notes Aid! Check out the latest updates.",
+          message: "Welcome to LearnConnect! Check out the latest updates.",
           date: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
           read: false,
         },

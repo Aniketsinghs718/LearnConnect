@@ -9,7 +9,7 @@ const Footer = () => {
           {/* Left side - Brand */}
           <div className="flex items-center gap-4">
             <span className="text-lg font-semibold text-white">
-              Notes Aid
+              LearnConnect
             </span>
             <span className="text-gray-400 text-sm">
               © 2025
