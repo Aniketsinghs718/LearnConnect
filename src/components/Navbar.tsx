@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   PWAInstaller,
   UserMenu,
@@ -23,6 +24,37 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <NavbarLogo />
+
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center space-x-6">
+            <Link
+              href="/"
+              className="text-white hover:text-blue-400 transition-colors duration-200 font-medium"
+            >
+              Home
+            </Link>
+            <Link
+              href="/marketplace"
+              className="text-white hover:text-blue-400 transition-colors duration-200 font-medium flex items-center space-x-1"
+            >
+              <span>🛒</span>
+              <span>Marketplace</span>
+            </Link>
+            <Link
+              href="/marketplace/sell"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md transition-colors duration-200 font-medium flex items-center space-x-1"
+            >
+              <span>📤</span>
+              <span>Sell</span>
+            </Link>
+            <Link
+              href="/marketplace/profile"
+              className="text-white hover:text-blue-400 transition-colors duration-200 font-medium flex items-center space-x-1"
+            >
+              <span>👤</span>
+              <span>My Items</span>
+            </Link>
+          </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">

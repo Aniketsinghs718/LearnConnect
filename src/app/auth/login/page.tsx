@@ -7,6 +7,7 @@ import AuthLayout from "@/components/layout/AuthLayout";
 import LoginForm from "@/components/forms/LoginForm";
 import RegisterForm from "@/components/forms/RegisterForm";
 import Alert from "@/components/ui/Alert";
+import { createUserProfile, ensureUserProfile } from "@/utils/userProfile";
 
 interface RegisterFormData {
   name: string;
@@ -30,33 +31,37 @@ export default function AuthPage() {
     setLoading(true);
     setError('');
     
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    
-    if (signInError) {
-      setError(signInError.message);
-      setLoading(false);
-      return;
-    }
-    
-    // Fetch user profile
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-    if (userError) {
-      setError(userError.message);
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Wait a moment for auth context to update
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Try to get user profile, create if missing
+      try {
+        const userData = await ensureUserProfile(data.user.id, data.user.email || email);
+        localStorage.setItem('userProfile', JSON.stringify(userData));
+        setLoading(false);
+        router.push('/');
+      } catch (profileError) {
+        console.error('Profile error:', profileError);
+        setError('Failed to load user profile. Please try again.');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred during login.');
       setLoading(false);
-      return;
     }
-    
-    localStorage.setItem('userProfile', JSON.stringify(userData));
-    setLoading(false);
-    router.push('/');
   };
 
   // Handle register
@@ -65,38 +70,60 @@ export default function AuthPage() {
     setError('');
     setSuccess('');
     
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
-    
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
-    
-    const { error: insertError } = await supabase.from('users').insert([
-      {
-        id: data.user?.id,
-        name: formData.name,
+    try {
+      // First, create the auth user
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
-        college: formData.college,
-        branch: formData.branch,
-        year: formData.year,
-        semester: formData.semester,
-      },
-    ]);
-    
-    if (insertError) {
-      setError(insertError.message);
+        password: formData.password,
+      });
+      
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data.user) {
+        setError('Failed to create user account.');
+        setLoading(false);
+        return;
+      }
+
+      // Wait a moment for auth context to be available
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Create user profile
+      try {
+        await createUserProfile({
+          id: data.user.id,
+          name: formData.name,
+          email: formData.email,
+          college: formData.college,
+          branch: formData.branch,
+          year: formData.year,
+          semester: formData.semester
+        });
+      } catch (insertError: any) {
+        console.error('User insert error:', insertError);
+        setError(`Registration failed: ${insertError.message}`);
+        
+        // If user profile creation fails, clean up auth user
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+      
+      // Sign out the user so they can login manually
+      await supabase.auth.signOut();
+      
+      setSuccess('Registration successful! Please check your email to verify your account, then sign in.');
       setLoading(false);
-      return;
+      setMode('login');
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError('An unexpected error occurred during registration.');
+      setLoading(false);
     }
-    
-    setSuccess('Registration successful! You can now sign in with your credentials.');
-    setLoading(false);
-    setMode('login');
   };
 
   return (
