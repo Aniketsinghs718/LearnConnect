@@ -39,8 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-
-# Ignore service worker file in public
-/public/service-worker.js
-/public/workbox-*.js

@@ -80,10 +80,6 @@ export const metadata: Metadata = {
     ],
     other: [
       {
-        rel: "manifest",
-        url: "/manifest.json",
-      },
-      {
         rel: "shortcut icon",
         url: "/favicon.ico",
       },

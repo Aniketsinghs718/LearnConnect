@@ -13,8 +13,20 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   // Don't show navbar and footer on homepage
   const isHomepage = pathname === "/";
   
+  // Don't show navbar on login and register pages
+  const isAuthPage = pathname === "/auth/login" || pathname === "/auth/register";
+  
   if (isHomepage) {
     return <>{children}</>;
+  }
+  
+  if (isAuthPage) {
+    return (
+      <>
+        {children}
+        <Footer />
+      </>
+    );
   }
   
   return (

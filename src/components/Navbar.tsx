@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  PWAInstaller,
   UserMenu,
   NavbarLogo
 } from "@/components/features/navbar";
@@ -58,9 +57,6 @@ const Navbar = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* PWA Install Button */}
-            <PWAInstaller mounted={mounted} />
-
             {/* User Menu */}
             <UserMenu mounted={mounted} />
           </div>
