@@ -13,21 +13,10 @@ interface ItemCardProps {
 
 export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
   const handleContactSeller = async () => {
     if (!item.seller?.phone) {
       toast.error('Seller phone number not available');
       return;
-    }
-
-    // Record view
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && user.id !== item.seller_id) {
-        await MarketplaceService.recordView(item.id, user.id);
-      }
-    } catch (error) {
-      console.error('Error recording view:', error);
     }
 
     // Generate WhatsApp URL
@@ -118,13 +107,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
             <div className="text-4xl">{item.category?.icon || '📦'}</div>
-          </div>
-        )}
-        
-        {/* Views Count */}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-          👁 {item.views_count}
-        </div>
+          </div>        )}
       </div>
 
       {/* Content Section */}
@@ -140,12 +123,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {item.category?.name}
           </span>
-        </div>
-
-        {item.location && (
+        </div>        {item.college_name && (
           <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-3">
-            <span className="mr-1">📍</span>
-            {item.location}
+            <span className="mr-1">🏫</span>
+            {item.college_name}
           </div>
         )}
 
@@ -164,16 +145,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
                   {item.seller?.name?.charAt(0) || 'U'}
                 </span>
               </div>
-            )}
-            <div>
+            )}            <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 {item.seller?.name}
               </p>
-              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                <span className="mr-1">⭐</span>
-                {item.seller?.rating?.toFixed(1) || '0.0'}
-                <span className="ml-1">({item.seller?.total_sales || 0} sales)</span>
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {item.seller?.college} - {item.seller?.branch}
+              </p>
             </div>
           </div>
         </div>

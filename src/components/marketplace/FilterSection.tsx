@@ -75,28 +75,19 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
                 <span>{category.icon}</span>
                 <span>{category.name}</span>
               </button>
-            ))}
-          </div>
+            ))}          </div>
 
-          {/* Price Range */}
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Price:</span>
-            <input
-              type="number"
-              placeholder="Min"
-              value={filters.minPrice || ''}
-              onChange={(e) => handleFilterChange('minPrice', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="number"
-              placeholder="Max"
-              value={filters.maxPrice || ''}
-              onChange={(e) => handleFilterChange('maxPrice', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
+          {/* Sort By Filter */}
+          <select
+            value={filters.sortBy || 'newest'}
+            onChange={(e) => handleFilterChange('sortBy', e.target.value)}
+            className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="price_low_to_high">Price: Low to High</option>
+            <option value="price_high_to_low">Price: High to Low</option>
+          </select>
 
           {/* Condition Filter */}
           <select
@@ -109,14 +100,12 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
             <option value="like_new">Like New</option>
             <option value="good">Good</option>
             <option value="fair">Fair</option>
-          </select>
-
-          {/* Location Filter */}
+          </select>          {/* College Name Filter */}
           <input
             type="text"
-            placeholder="Location"
-            value={filters.location || ''}
-            onChange={(e) => handleFilterChange('location', e.target.value)}
+            placeholder="College Name"
+            value={filters.college_name || ''}
+            onChange={(e) => handleFilterChange('college_name', e.target.value)}
             className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
           />
 

@@ -12,20 +12,20 @@ import { useRouter } from 'next/navigation';
 export const SellItemForm: React.FC = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<CreateItemData>({
+  const [loading, setLoading] = useState(false);  const [formData, setFormData] = useState<CreateItemData>({
     title: '',
     description: '',
     category_id: '',
     price: 0,
     condition: 'good',
-    location: '',
+    college_name: '',
+    size: undefined,
     images: []
   });
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-
   useEffect(() => {
     loadCategories();
+    loadUserProfile();
   }, []);
 
   const loadCategories = async () => {
@@ -38,6 +38,41 @@ export const SellItemForm: React.FC = () => {
     }
   };
 
+  const loadUserProfile = async () => {
+    try {
+      // First try to get from localStorage
+      const userProfile = localStorage.getItem("userProfile");
+      if (userProfile) {
+        const profile = JSON.parse(userProfile);
+        setFormData(prev => ({
+          ...prev,
+          college_name: profile.college || ''
+        }));
+        return;
+      }
+
+      // If not in localStorage, try to get from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('college')
+          .eq('id', user.id)
+          .single();
+        
+        if (userData?.college) {
+          setFormData(prev => ({
+            ...prev,
+            college_name: userData.college
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      // Don't show error toast for this as it's not critical
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -45,12 +80,20 @@ export const SellItemForm: React.FC = () => {
       [name]: name === 'price' ? Number(value) : value
     }));
   };
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
     if (formData.images.length + files.length > 5) {
       toast.error('Maximum 5 images allowed');
+      return;
+    }
+
+    // Validate image formats - Supabase Storage supports: JPEG, PNG, GIF, WebP
+    const supportedFormats = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const unsupportedFiles = files.filter(file => !supportedFormats.includes(file.type));
+    
+    if (unsupportedFiles.length > 0) {
+      toast.error(`Unsupported image format. Please use JPEG, PNG, GIF, or WebP files only.`);
       return;
     }
 
@@ -241,23 +284,42 @@ export const SellItemForm: React.FC = () => {
                   <option value="good">Good</option>
                   <option value="fair">Fair</option>
                 </select>
-              </div>
-
-              {/* Location */}
+              </div>              {/* College Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Location
+                  College Name <span className="text-xs text-gray-500">(Auto-filled from profile)</span>
                 </label>
                 <input
                   type="text"
-                  name="location"
-                  value={formData.location}
+                  name="college_name"
+                  value={formData.college_name}
                   onChange={handleInputChange}
-                  placeholder="e.g., Mumbai, Maharashtra"
+                  placeholder="Auto-filled from your profile..."
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
+
+            {/* Size Field - Only for Aprons */}
+            {categories.find(cat => cat.id === formData.category_id)?.name?.includes('Apron') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Size *
+                </label>
+                <select
+                  name="size"
+                  value={formData.size || ''}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Select Size</option>
+                  <option value="M">Medium (M)</option>
+                  <option value="L">Large (L)</option>
+                  <option value="XL">Extra Large (XL)</option>
+                </select>
+              </div>
+            )}
 
             {/* Images */}
             <div>
@@ -265,11 +327,10 @@ export const SellItemForm: React.FC = () => {
                 Images * (Max 5)
               </label>
               
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                <input
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">                <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
                   onChange={handleImageUpload}
                   className="hidden"
                   id="image-upload"
@@ -291,7 +352,7 @@ export const SellItemForm: React.FC = () => {
                     }
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    PNG, JPG up to 10MB each
+                    JPEG, PNG, GIF, WebP up to 10MB each
                   </p>
                 </label>
               </div>

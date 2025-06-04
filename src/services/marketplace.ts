@@ -1,6 +1,5 @@
-
 import { supabase } from '../lib/supabaseClient';
-import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters, CreateItemData, UserRating } from '../types/marketplace';
+import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters, CreateItemData } from '../types/marketplace';
 
 export class MarketplaceService {
   // Get all categories
@@ -12,9 +11,7 @@ export class MarketplaceService {
 
     if (error) throw error;
     return data || [];
-  }
-
-  // Get items with filters
+  }  // Get items with filters
   static async getItems(filters: MarketplaceFilters = {}): Promise<MarketplaceItem[]> {
     let query = supabase
       .from('marketplace_items')
@@ -23,31 +20,41 @@ export class MarketplaceService {
         seller:users(*),
         category:marketplace_categories(*)
       `)
-      .eq('is_available', true)
-      .order('created_at', { ascending: false });
+      .eq('is_available', true);
 
+    // Apply filters
     if (filters.category) {
       query = query.eq('category_id', filters.category);
-    }
-
-    if (filters.minPrice) {
-      query = query.gte('price', filters.minPrice);
-    }
-
-    if (filters.maxPrice) {
-      query = query.lte('price', filters.maxPrice);
     }
 
     if (filters.condition) {
       query = query.eq('condition', filters.condition);
     }
 
-    if (filters.location) {
-      query = query.ilike('location', `%${filters.location}%`);
+    if (filters.college_name) {
+      query = query.ilike('college_name', `%${filters.college_name}%`);
     }
 
     if (filters.search) {
       query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+
+    switch (filters.sortBy) {
+      case 'newest':
+        query = query.order('created_at', { ascending: false });
+        break;
+      case 'oldest':
+        query = query.order('created_at', { ascending: true });
+        break;
+      case 'price_low_to_high':
+        query = query.order('price', { ascending: true });
+        break;
+      case 'price_high_to_low':
+        query = query.order('price', { ascending: false });
+        break;
+      default:
+        query = query.order('created_at', { ascending: false });
+        break;
     }
 
     const { data, error } = await query;
@@ -68,7 +75,7 @@ export class MarketplaceService {
       .eq('id', id)
       .single();
 
-  if (error) throw error;
+    if (error) throw error;
     return data;
   }
 
@@ -98,17 +105,9 @@ export class MarketplaceService {
         .getPublicUrl(filePath);
 
       imageUrls.push(publicUrl);
-    }    // Create item
-    console.log('Creating marketplace item with data:', {
-      seller_id: sellerId,
-      title: itemData.title,
-      category_id: itemData.category_id,
-      price: itemData.price,
-      condition: itemData.condition,
-      location: itemData.location,
-      images: imageUrls
-    });
+    }
 
+    // Create item
     const { data, error } = await supabase
       .from('marketplace_items')
       .insert({
@@ -118,7 +117,8 @@ export class MarketplaceService {
         category_id: itemData.category_id,
         price: itemData.price,
         condition: itemData.condition,
-        location: itemData.location,
+        college_name: itemData.college_name,
+        size: itemData.size,
         images: imageUrls
       })
       .select()
@@ -129,7 +129,7 @@ export class MarketplaceService {
   }
 
   // Update item
-  static async updateItem(id: string, updates: Partial<MarketplaceItem>): Promise<void> {
+  static async updateItem(id: string, updates: Partial<CreateItemData>): Promise<void> {
     const { error } = await supabase
       .from('marketplace_items')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -138,43 +138,13 @@ export class MarketplaceService {
     if (error) throw error;
   }
 
-  // Mark item as sold
+  // Mark item as sold using the database function
   static async markAsSold(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('marketplace_items')
-      .update({ 
-        is_sold: true, 
-        is_available: false,
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', id);
+    const { error } = await supabase.rpc('mark_item_as_sold', {
+      item_id: id
+    });
 
     if (error) throw error;
-  }
-
-  // Record item view
-  static async recordView(itemId: string, viewerId: string): Promise<void> {
-    // Check if user already viewed this item today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const { data: existingView } = await supabase
-      .from('marketplace_item_views')
-      .select('id')
-      .eq('item_id', itemId)
-      .eq('viewer_id', viewerId)
-      .gte('viewed_at', today.toISOString())
-      .single();
-
-    if (!existingView) {
-      // Record new view
-      await supabase
-        .from('marketplace_item_views')
-        .insert({ item_id: itemId, viewer_id: viewerId });
-
-      // Increment view count
-      await supabase.rpc('increment_item_views', { item_id: itemId });
-    }
   }
 
   // Get user's items
@@ -192,53 +162,33 @@ export class MarketplaceService {
     return data || [];
   }
 
-  // Get user ratings
-  static async getUserRatings(userId: string): Promise<UserRating[]> {
-    const { data, error } = await supabase
-      .from('user_ratings')
-      .select(`
-        *,
-        rater:users(name, avatar_url)
-      `)
-      .eq('rated_user_id', userId)
-      .order('created_at', { ascending: false });
+  // Delete item
+  static async deleteItem(id: string): Promise<void> {
+    // First get the item to access images for cleanup
+    const { data: item } = await supabase
+      .from('marketplace_items')
+      .select('images')
+      .eq('id', id)
+      .single();
+
+    // Delete the item
+    const { error } = await supabase
+      .from('marketplace_items')
+      .delete()
+      .eq('id', id);
 
     if (error) throw error;
-    return data || [];
-  }
 
-  // Add rating
-  static async addRating(ratedUserId: string, raterId: string, rating: number, review: string, itemId: string): Promise<void> {
-    const { error } = await supabase
-      .from('user_ratings')
-      .insert({
-        rated_user_id: ratedUserId,
-        rater_id: raterId,
-        rating,
-        review,
-        item_id: itemId
+    // Clean up images from storage
+    if (item?.images && item.images.length > 0) {
+      const filePaths = item.images.map((url: string) => {
+        const urlParts = url.split('/');
+        return urlParts.slice(-2).join('/'); // Get seller_id/filename
       });
 
-    if (error) throw error;
-
-    // Update user's average rating
-    await this.updateUserRating(ratedUserId);
-  }
-
-  // Update user's average rating
-  private static async updateUserRating(userId: string): Promise<void> {
-    const { data } = await supabase
-      .from('user_ratings')
-      .select('rating')
-      .eq('rated_user_id', userId);
-
-    if (data && data.length > 0) {
-      const averageRating = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
-      
-      await supabase
-        .from('users')
-        .update({ rating: Number(averageRating.toFixed(2)) })
-        .eq('id', userId);
+      await supabase.storage
+        .from('marketplace-images')
+        .remove(filePaths);
     }
   }
 

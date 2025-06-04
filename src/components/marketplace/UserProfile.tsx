@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MarketplaceItem, UserRating } from '../../types/marketplace';
+import { MarketplaceItem } from '../../types/marketplace';
 import { MarketplaceService } from '../../services/marketplace';
 import { supabase } from '../../lib/supabaseClient';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -14,10 +14,9 @@ interface UserProfileProps {
 
 export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
   const [userItems, setUserItems] = useState<MarketplaceItem[]>([]);
-  const [userRatings, setUserRatings] = useState<UserRating[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'items' | 'sold' | 'ratings'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'sold'>('items');
 
   useEffect(() => {
     loadUserData();
@@ -43,15 +42,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
         .eq('id', targetUserId)
         .single();
       
-      setCurrentUser(userData);
-
-      // Load user's items
+      setCurrentUser(userData);      // Load user's items
       const items = await MarketplaceService.getUserItems(targetUserId);
       setUserItems(items);
-
-      // Load user's ratings
-      const ratings = await MarketplaceService.getUserRatings(targetUserId);
-      setUserRatings(ratings);
       
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -106,22 +99,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {currentUser?.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
+              </h1>              <p className="text-gray-600 dark:text-gray-300">
                 {currentUser?.college} • {currentUser?.branch} • {currentUser?.year}
               </p>
-              
-              <div className="flex items-center space-x-4 mt-2">
-                <div className="flex items-center space-x-1">
-                  <span>⭐</span>
-                  <span className="font-medium">{currentUser?.rating?.toFixed(1) || '0.0'}</span>
-                  <span className="text-gray-500">({userRatings.length} reviews)</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span>🏆</span>
-                  <span className="font-medium">{currentUser?.total_sales || 0} sales</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -139,8 +119,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
                 }`}
               >
                 Active Items ({activeItems.length})
-              </button>
-              <button
+              </button>              <button
                 onClick={() => setActiveTab('sold')}
                 className={`py-4 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'sold'
@@ -149,16 +128,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
                 }`}
               >
                 Sold Items ({soldItems.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('ratings')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'ratings'
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                }`}
-              >
-                Reviews ({userRatings.length})
               </button>
             </nav>
           </div>
@@ -183,7 +152,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900 dark:text-white">{item.title}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300">₹{item.price}</p>
-                        <p className="text-xs text-gray-500">👁 {item.views_count} views</p>
+                        {item.college_name && (
+                          <p className="text-xs text-gray-500">🏫 {item.college_name}</p>
+                        )}
                       </div>
                       <button
                         onClick={() => handleMarkAsSold(item.id)}
@@ -218,43 +189,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ userId }) => {
                         <p className="text-sm text-gray-600 dark:text-gray-300">₹{item.price}</p>
                         <p className="text-xs text-green-600">✅ Sold</p>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Ratings Tab */}
-            {activeTab === 'ratings' && (
-              <div className="space-y-4">
-                {userRatings.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="text-4xl mb-2">⭐</div>
-                    <p className="text-gray-600 dark:text-gray-300">No reviews yet</p>
-                  </div>
-                ) : (
-                  userRatings.map((rating) => (
-                    <div key={rating.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900 dark:text-white">
-                            {rating.rater?.name}
-                          </span>
-                          <div className="flex">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <span key={i} className={i < rating.rating ? 'text-yellow-400' : 'text-gray-300'}>
-                                ⭐
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          {new Date(rating.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {rating.review && (
-                        <p className="text-gray-600 dark:text-gray-300">{rating.review}</p>
-                      )}
                     </div>
                   ))
                 )}
