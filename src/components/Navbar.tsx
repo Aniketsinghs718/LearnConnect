@@ -5,13 +5,26 @@ import {
   UserMenu,
   NavbarLogo
 } from "@/components/features/navbar";
+import { AdminService } from "@/services/adminService";
 
 const Navbar = () => {
   const [mounted, setMounted] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const adminStatus = await AdminService.isAdmin();
+      setIsAdmin(adminStatus);
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      setIsAdmin(false);
+    }
+  };
 
   if (!mounted) {
     return null; // Prevent hydration mismatch
@@ -53,6 +66,15 @@ const Navbar = () => {
               <span>👤</span>
               <span>My Items</span>
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md transition-colors duration-200 font-medium flex items-center space-x-1"
+              >
+                <span>🛡️</span>
+                <span>Admin</span>
+              </Link>
+            )}
           </div>
 
           {/* Right Side Actions */}

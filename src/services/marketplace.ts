@@ -17,10 +17,11 @@ export class MarketplaceService {
       .from('marketplace_items')
       .select(`
         *,
-        seller:users(*),
+        seller:users!marketplace_items_seller_id_fkey(*),
         category:marketplace_categories(*)
       `)
-      .eq('is_available', true);
+      .eq('is_available', true)
+      .eq('verification_status', 'approved'); // Only show approved items
 
     // Apply filters
     if (filters.category) {
@@ -29,9 +30,7 @@ export class MarketplaceService {
 
     if (filters.condition) {
       query = query.eq('condition', filters.condition);
-    }
-
-    if (filters.college_name) {
+    }    if (filters.college_name) {
       query = query.ilike('college_name', `%${filters.college_name}%`);
     }
 
@@ -55,28 +54,38 @@ export class MarketplaceService {
       default:
         query = query.order('created_at', { ascending: false });
         break;
-    }
-
-    const { data, error } = await query;
+    }    const { data, error } = await query;
 
     if (error) throw error;
-    return data || [];
-  }
-
-  // Get item by ID
+      // Add backward compatibility mapping
+    const items = (data || []).map(item => ({
+      ...item,
+      location: item.college_name, // Map college_name to location for backward compatibility
+      is_sold: !item.is_available // Map is_available to is_sold for backward compatibility
+    }));
+    
+    return items;
+  }  // Get item by ID
   static async getItemById(id: string): Promise<MarketplaceItem | null> {
     const { data, error } = await supabase
       .from('marketplace_items')
       .select(`
         *,
-        seller:users(*),
+        seller:users!marketplace_items_seller_id_fkey(*),
         category:marketplace_categories(*)
       `)
       .eq('id', id)
       .single();
 
     if (error) throw error;
-    return data;
+    
+    if (!data) return null;
+      // Add backward compatibility mapping
+    return {
+      ...data,
+      location: data.college_name,
+      is_sold: !data.is_available
+    };
   }
 
   // Create new item
@@ -105,9 +114,7 @@ export class MarketplaceService {
         .getPublicUrl(filePath);
 
       imageUrls.push(publicUrl);
-    }
-
-    // Create item
+    }    // Create item
     const { data, error } = await supabase
       .from('marketplace_items')
       .insert({
@@ -117,9 +124,10 @@ export class MarketplaceService {
         category_id: itemData.category_id,
         price: itemData.price,
         condition: itemData.condition,
-        college_name: itemData.college_name,
-        size: itemData.size,
-        images: imageUrls
+        college_name: itemData.college_name || '',
+        size: itemData.size, // Add size field for aprons
+        images: imageUrls,
+        verification_status: 'pending' // Set new items to pending verification
       })
       .select()
       .single();
@@ -146,7 +154,6 @@ export class MarketplaceService {
 
     if (error) throw error;
   }
-
   // Get user's items
   static async getUserItems(userId: string): Promise<MarketplaceItem[]> {
     const { data, error } = await supabase
@@ -159,7 +166,14 @@ export class MarketplaceService {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+      // Add backward compatibility mapping
+    const items = (data || []).map(item => ({
+      ...item,
+      location: item.college_name,
+      is_sold: !item.is_available
+    }));
+    
+    return items;
   }
 
   // Delete item
@@ -199,5 +213,111 @@ export class MarketplaceService {
     const formattedPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
     
     return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+  }
+
+  // Get all items for admin (including pending)
+  static async getAllItemsForAdmin(filters: MarketplaceFilters = {}): Promise<MarketplaceItem[]> {
+    let query = supabase
+      .from('marketplace_items')
+      .select(`
+        *,
+        seller:users!marketplace_items_seller_id_fkey(*),
+        category:marketplace_categories(*),
+        verified_by_admin:users!marketplace_items_verified_by_fkey(*)
+      `);
+
+    // Apply filters (but don't filter by verification status or availability)
+    if (filters.category) {
+      query = query.eq('category_id', filters.category);
+    }
+
+    if (filters.condition) {
+      query = query.eq('condition', filters.condition);
+    }
+
+    if (filters.college_name) {
+      query = query.ilike('college_name', `%${filters.college_name}%`);
+    }
+
+    if (filters.search) {
+      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+    }
+
+    // Default sorting by verification status (pending first) then by creation date
+    query = query.order('verification_status', { ascending: true })
+                 .order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    
+    // Add backward compatibility mapping
+    const items = (data || []).map(item => ({
+      ...item,
+      location: item.college_name,
+      is_sold: !item.is_available
+    }));
+    
+    return items;
+  }
+
+  // Admin verification methods
+  static async approveItem(itemId: string, adminNotes?: string): Promise<void> {
+    const { error } = await supabase.rpc('approve_marketplace_item', {
+      item_id: itemId,
+      admin_notes_text: adminNotes || null
+    });
+
+    if (error) throw error;
+  }
+
+  static async rejectItem(itemId: string, reason: string, adminNotes?: string): Promise<void> {
+    const { error } = await supabase.rpc('reject_marketplace_item', {
+      item_id: itemId,
+      reason: reason,
+      admin_notes_text: adminNotes || null
+    });
+
+    if (error) throw error;
+  }
+
+  // Get pending items count for admin dashboard
+  static async getPendingItemsCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('marketplace_items')
+      .select('*', { count: 'exact', head: true })
+      .eq('verification_status', 'pending');
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  // Get verification statistics
+  static async getVerificationStats(): Promise<{
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  }> {
+    const { data, error } = await supabase
+      .from('marketplace_items')
+      .select('verification_status');
+
+    if (error) throw error;
+
+    const stats = {
+      total: data?.length || 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0
+    };
+
+    data?.forEach(item => {
+      if (item.verification_status === 'pending') stats.pending++;
+      else if (item.verification_status === 'approved') stats.approved++;
+      else if (item.verification_status === 'rejected') stats.rejected++;
+    });
+
+    return stats;
   }
 }
