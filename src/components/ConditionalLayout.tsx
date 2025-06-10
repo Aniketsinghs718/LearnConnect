@@ -1,7 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import Footer from "../components/Footer";
-import Navbar from "../components/Navbar";
+import CourseNavbar from "../components/homepage/CourseNavbar";
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -16,7 +16,11 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
   // Don't show navbar on login and register pages
   const isAuthPage = pathname === "/auth/login" || pathname === "/auth/register";
   
-  if (isHomepage) {
+  // Check if it's a course page to exclude from layout (they have their own CourseNavbar)
+  const coursePageMatch = pathname.match(/^\/([^\/]+)\/([^\/]+)\/([^\/]+)$/);
+  const isCursePage = !!coursePageMatch;
+  
+  if (isHomepage || isCursePage) {
     return <>{children}</>;
   }
   
@@ -28,10 +32,11 @@ export default function ConditionalLayout({ children }: ConditionalLayoutProps) 
       </>
     );
   }
-  
+
+  // For all other pages (marketplace, admin, contributors, etc.)
   return (
     <>
-      <Navbar />
+      <CourseNavbar />
       {children}
       <Footer />
     </>

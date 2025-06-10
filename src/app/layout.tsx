@@ -112,7 +112,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="animate-fade-in">
+      <body className="animate-fade-in bg-black text-white">
         {/* <SessionProvider> Removed NextAuth SessionProvider since app uses Supabase Auth */}
           {/* <ThemeProvider attribute="class"> */}
             <ConditionalLayout>

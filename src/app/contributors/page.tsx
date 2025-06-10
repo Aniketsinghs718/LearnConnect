@@ -45,16 +45,16 @@ export default function Contributors() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
       </div>
     );
 
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-        <div className="bg-red-50 dark:bg-red-900/30 p-6 rounded-lg border border-red-200 dark:border-red-800">
-          <p className="text-red-600 dark:text-red-400">
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="bg-red-500/10 p-6 rounded-lg border border-red-500/30">
+          <p className="text-red-400">
             Error loading contributors: {error}
           </p>
         </div>
@@ -62,12 +62,12 @@ export default function Contributors() {
     );
 
   return (
-    <div className="min-h-screen bg-base-200 py-12">
+    <div className="min-h-screen bg-black py-12">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center mb-3 text-base-content">
+        <h1 className="text-3xl font-bold text-center mb-3 text-white">
           Project Contributors
         </h1>
-        <p className="text-center text-base-content/70 mb-8">
+        <p className="text-center text-gray-400 mb-8">
           Meet the amazing people who have contributed to this project
         </p>
 
@@ -75,36 +75,33 @@ export default function Contributors() {
           {contributors.map((contributor) => (
             <div
               key={contributor.id}
-              className="card bg-base-100 border border-base-300 shadow hover:shadow-lg transition-all duration-300"
+              className="bg-gray-900/80 backdrop-blur-sm border border-gray-700 rounded-xl shadow-lg hover:shadow-orange-500/20 hover:border-orange-500/50 transition-all duration-300"
             >
-              <div className="card-body items-center text-center">
+              <div className="p-6 items-center text-center">
                 <div className="group mb-4">
-                  <div className="avatar relative overflow-hidden transition-transform duration-300 transform group-hover:scale-105">
-                    <div className="w-24 rounded-full ring ring-base-300 ring-offset-base-100 ring-offset-5 overflow-hidden">
+                  <div className="relative overflow-hidden transition-transform duration-300 transform group-hover:scale-105 mx-auto">
+                    <div className="w-24 h-24 rounded-full ring ring-orange-500/30 ring-offset-4 ring-offset-gray-900 overflow-hidden mx-auto">
                       <Image
                         src={contributor.avatar_url}
                         alt={`${contributor.login}'s avatar`}
                         width={96}
                         height={96}
-                        className="object-cover"
+                        className="object-cover w-full h-full"
                         unoptimized
                       />
                       <div className="absolute inset-0 rounded-full bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                     </div>
                   </div>
                 </div>
-                <h2 className="card-title text-base-content">
+                <h2 className="font-bold text-white text-lg mb-4">
                   {contributor.login}
                 </h2>
-                {/* <p className="badge badge-info badge-outline text-xs mt-2">
-              {contributor.contributions} contributions
-            </p> */}
                 <div className="mt-4">
                   <a
                     href={contributor.html_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-sm btn-outline gap-2"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
                     aria-label="View Profile"
                   >
                     <Github className="w-5 h-5" />

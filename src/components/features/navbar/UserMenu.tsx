@@ -38,14 +38,14 @@ export default function UserMenu({ mounted }: UserMenuProps) {
         <div className="flex items-center space-x-3">
           <Link 
             href="/auth/profile"
-            className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-gray-200 dark:border-gray-700 backdrop-blur-lg transition-all duration-200 flex items-center space-x-2"
+            className="px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 border border-gray-600 transition-all duration-200 flex items-center space-x-2 text-gray-200 hover:text-orange-400"
           >
             <User className="w-4 h-4" />
             <span>{user.name}</span>
           </Link>
           <button 
             onClick={handleSignOut}
-            className="px-4 py-2 rounded-full bg-red-500/80 hover:bg-red-500 text-white backdrop-blur-lg transition-all duration-200"
+            className="px-4 py-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-all duration-200 hover:scale-105"
           >
             Sign Out
           </button>
@@ -54,14 +54,14 @@ export default function UserMenu({ mounted }: UserMenuProps) {
         <div className="flex items-center space-x-3">
           <Link
             href="/auth/login"
-            className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-gray-200 dark:border-gray-700 backdrop-blur-lg transition-all duration-200 flex items-center space-x-2"
+            className="px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 border border-gray-600 transition-all duration-200 flex items-center space-x-2 text-gray-200 hover:text-orange-400"
           >
             <LogIn className="w-4 h-4" />
             <span>Login</span>
           </Link>
           <Link
             href="/auth/register"
-            className="px-4 py-2 rounded-full bg-blue-500/80 hover:bg-blue-500 text-white backdrop-blur-lg transition-all duration-200 flex items-center space-x-2"
+            className="px-4 py-2 rounded-full bg-orange-500 hover:bg-orange-600 text-white transition-all duration-200 flex items-center space-x-2 hover:scale-105"
           >
             <UserPlus className="w-4 h-4" />
             <span>Register</span>

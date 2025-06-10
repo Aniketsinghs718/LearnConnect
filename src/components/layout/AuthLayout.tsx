@@ -76,7 +76,7 @@ export default function AuthLayout({ children, title, subtitle }: AuthLayoutProp
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="flex items-center justify-center mb-4"
               >
-                <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-3 rounded-full">
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-full">
                   <Sparkles className="w-6 h-6 text-white" />
                 </div>
               </motion.div>

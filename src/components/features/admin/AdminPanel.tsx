@@ -36,19 +36,20 @@ export const AdminPanel: React.FC = () => {
       setLoading(false);
     }
   };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Verifying admin access...</p>
+          <p className="mt-4 text-gray-400">Verifying admin access...</p>
         </div>
       </div>
     );
-  }  if (!isAdmin) {
+  }
+
+  if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🚫</div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -78,31 +79,30 @@ export const AdminPanel: React.FC = () => {
         return <AdminDashboard />;
     }
   };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow">
+      <div className="bg-gray-900 border-b border-orange-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl font-bold text-white">
                 🛡️ Admin Panel
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-400">
                 Manage marketplace items and users
               </p>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
                 <span>Admin Access</span>
               </div>
               
               <button
                 onClick={() => router.push('/marketplace')}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
               >
                 Back to Marketplace
               </button>

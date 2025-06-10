@@ -28,9 +28,8 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
   };
 
   const hasActiveFilters = Object.keys(filters).length > 0;
-
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-gray-900 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Search Bar */}
         <div className="mb-4">
@@ -40,7 +39,7 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
               placeholder="Search items..."
               value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
             />
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span className="text-gray-400">🔍</span>
@@ -48,16 +47,15 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
         </div>
 
-        {/* Filter Controls */}
-        <div className="flex flex-wrap gap-4 items-center">
+        {/* Filter Controls */}        <div className="flex flex-wrap gap-4 items-center">
           {/* Category Filter */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleFilterChange('category', '')}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                 !filters.category
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
               }`}
             >
               All Categories
@@ -68,20 +66,21 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
                 onClick={() => handleFilterChange('category', category.id)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors flex items-center space-x-1 ${
                   filters.category === category.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
                 }`}
               >
                 <span>{category.icon}</span>
                 <span>{category.name}</span>
               </button>
-            ))}          </div>
+            ))}
+          </div>
 
           {/* Sort By Filter */}
           <select
             value={filters.sortBy || 'newest'}
             onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-            className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-white"
           >
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
@@ -93,27 +92,29 @@ export const FilterSection: React.FC<FilterSectionProps> = ({
           <select
             value={filters.condition || ''}
             onChange={(e) => handleFilterChange('condition', e.target.value)}
-            className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-3 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-white"
           >
             <option value="">All Conditions</option>
             <option value="new">New</option>
             <option value="like_new">Like New</option>
             <option value="good">Good</option>
             <option value="fair">Fair</option>
-          </select>          {/* College Name Filter */}
+          </select>
+
+          {/* College Name Filter */}
           <input
             type="text"
             placeholder="College Name"
             value={filters.college_name || ''}
             onChange={(e) => handleFilterChange('college_name', e.target.value)}
-            className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+            className="px-3 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-white placeholder-gray-400"
           />
 
           {/* Clear Filters */}
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              className="px-3 py-1 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium"
+              className="px-3 py-1 text-sm text-orange-400 hover:text-orange-300 font-medium"
             >
               Clear All
             </button>

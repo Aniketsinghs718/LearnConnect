@@ -8,11 +8,14 @@ import { supabase } from '../../lib/supabaseClient';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { X, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export const SellItemForm: React.FC = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
-  const [loading, setLoading] = useState(false);  const [formData, setFormData] = useState<CreateItemData>({
+  const [loading, setLoading] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);const [formData, setFormData] = useState<CreateItemData>({
     title: '',
     description: '',
     category_id: '',
@@ -114,8 +117,7 @@ export const SellItemForm: React.FC = () => {
     
     setFormData(prev => ({ ...prev, images: newImages }));
     setImagePreviews(newPreviews);
-  };
-  const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title.trim()) {
@@ -138,6 +140,13 @@ export const SellItemForm: React.FC = () => {
       return;
     }
 
+    // Show disclaimer before proceeding
+    setShowDisclaimer(true);
+  };
+
+  const proceedWithListing = async () => {
+    setShowDisclaimer(false);
+    
     try {
       setLoading(true);
       
@@ -160,15 +169,21 @@ export const SellItemForm: React.FC = () => {
         toast.error('User profile not found. Please complete your registration.');
         router.push('/auth/profile');
         return;
-      }
-
-      console.log('Creating item with user ID:', user.id);
+      }      console.log('Creating item with user ID:', user.id);
       
       // Create item
       const itemId = await MarketplaceService.createItem(formData, user.id);
       
-      toast.success('Item listed successfully!');
-      router.push('/marketplace');
+      // Show verification message
+      setShowVerificationMessage(true);
+      
+      // Hide verification message after 3 seconds and redirect
+      setTimeout(() => {
+        setShowVerificationMessage(false);
+        toast.success('Item listed successfully!');
+        router.push('/marketplace');
+      }, 3000);
+      
     } catch (error: any) {
       console.error('Error creating item:', error);
       
@@ -185,19 +200,17 @@ export const SellItemForm: React.FC = () => {
       setLoading(false);
     }
   };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <div className="min-h-screen bg-black py-8">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+        <div className="bg-gray-900/80 backdrop-blur-sm rounded-lg border border-gray-700 p-6">
+          <h1 className="text-2xl font-bold text-white mb-6">
             📦 List Your Item
           </h1>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
+          <form onSubmit={handleSubmit} className="space-y-6">            {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Item Title *
               </label>
               <input
@@ -207,13 +220,13 @@ export const SellItemForm: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="e.g., Physics Textbook Class 12"
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Description
               </label>
               <textarea
@@ -222,14 +235,12 @@ export const SellItemForm: React.FC = () => {
                 onChange={handleInputChange}
                 placeholder="Describe your item's condition, usage, and any other details..."
                 rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Category *
                 </label>
                 <select
@@ -237,7 +248,7 @@ export const SellItemForm: React.FC = () => {
                   value={formData.category_id}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="">Select Category</option>
                   {categories.map((category) => (
@@ -250,7 +261,7 @@ export const SellItemForm: React.FC = () => {
 
               {/* Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Price (₹) *
                 </label>
                 <input
@@ -261,7 +272,7 @@ export const SellItemForm: React.FC = () => {
                   placeholder="100"
                   min="1"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -269,7 +280,7 @@ export const SellItemForm: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Condition */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Condition *
                 </label>
                 <select
@@ -277,7 +288,7 @@ export const SellItemForm: React.FC = () => {
                   value={formData.condition}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="new">New</option>
                   <option value="like_new">Like New</option>
@@ -286,7 +297,7 @@ export const SellItemForm: React.FC = () => {
                 </select>
               </div>              {/* College Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   College Name <span className="text-xs text-gray-500">(Auto-filled from profile)</span>
                 </label>
                 <input
@@ -295,7 +306,7 @@ export const SellItemForm: React.FC = () => {
                   value={formData.college_name}
                   onChange={handleInputChange}
                   placeholder="Auto-filled from your profile..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -303,7 +314,7 @@ export const SellItemForm: React.FC = () => {
             {/* Size Field - Only for Aprons */}
             {categories.find(cat => cat.id === formData.category_id)?.name?.includes('Apron') && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Size *
                 </label>
                 <select
@@ -311,7 +322,7 @@ export const SellItemForm: React.FC = () => {
                   value={formData.size || ''}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 >
                   <option value="">Select Size</option>
                   <option value="M">Medium (M)</option>
@@ -323,11 +334,11 @@ export const SellItemForm: React.FC = () => {
 
             {/* Images */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Images * (Max 5)
               </label>
               
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">                <input
+              <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center bg-gray-800/50"><input
                   type="file"
                   multiple
                   accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
@@ -335,13 +346,12 @@ export const SellItemForm: React.FC = () => {
                   className="hidden"
                   id="image-upload"
                   disabled={formData.images.length >= 5}
-                />
-                <label
+                />                <label
                   htmlFor="image-upload"
                   className={`cursor-pointer ${
                     formData.images.length >= 5 
                       ? 'text-gray-400 cursor-not-allowed' 
-                      : 'text-blue-600 hover:text-blue-700'
+                      : 'text-orange-400 hover:text-orange-300'
                   }`}
                 >
                   <div className="text-4xl mb-2">📷</div>
@@ -351,7 +361,7 @@ export const SellItemForm: React.FC = () => {
                       : 'Click to upload images or drag and drop'
                     }
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     JPEG, PNG, GIF, WebP up to 10MB each
                   </p>
                 </label>
@@ -380,11 +390,10 @@ export const SellItemForm: React.FC = () => {
               )}
             </div>
 
-            {/* Submit Button */}
-            <button
+            {/* Submit Button */}            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
+              className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition-colors"
             >
               {loading ? (
                 <LoadingSpinner />
@@ -393,11 +402,117 @@ export const SellItemForm: React.FC = () => {
                   <span>📤</span>
                   <span>List Item</span>
                 </>
-              )}
-            </button>
+              )}            </button>
           </form>
         </div>
       </div>
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  Important Notice
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="text-gray-400 hover:text-gray-200 transition-colors p-1"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="mb-6 space-y-4">
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                <h4 className="text-red-400 font-semibold mb-2">⚠️ Fraud Prevention Notice</h4>
+                <p className="text-gray-300 text-sm leading-relaxed">
+                  Any inappropriate content, fraudulent listings, or misleading information will result in:
+                </p>
+                <ul className="text-gray-400 text-sm mt-2 space-y-1">
+                  <li>• Immediate item removal</li>
+                  <li>• Account suspension or permanent ban</li>
+                  <li>• Reporting to college authorities</li>
+                  <li>• Legal action if necessary</li>
+                </ul>
+              </div>
+              
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                <h4 className="text-orange-400 font-semibold mb-2">📋 Guidelines</h4>
+                <ul className="text-gray-400 text-sm space-y-1">
+                  <li>• Only list genuine, owned items</li>
+                  <li>• Provide accurate descriptions and photos</li>
+                  <li>• Set fair and reasonable prices</li>
+                  <li>• Be respectful in all communications</li>
+                </ul>
+              </div>
+              
+              <p className="text-gray-300 text-sm">
+                By proceeding, you agree to these terms and confirm that your listing complies with our community guidelines.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="flex-1 px-4 py-3 text-sm font-medium text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors border border-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={proceedWithListing}
+                className="flex-1 px-4 py-3 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                I Agree, Proceed
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Message Modal */}
+      {showVerificationMessage && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-orange-400" />
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-white mb-4">
+              Item Submitted Successfully!
+            </h3>
+            
+            <div className="space-y-3 mb-6">
+              <p className="text-gray-300">
+                Your item has been submitted for admin verification.
+              </p>
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                <p className="text-orange-400 text-sm font-medium">
+                  📋 What happens next:
+                </p>
+                <ul className="text-gray-400 text-sm mt-2 space-y-1 text-left">
+                  <li>• Admin will review your listing</li>
+                  <li>• Verification usually takes 24-48 hours</li>
+                  <li>• You'll be notified once approved</li>
+                  <li>• Item will appear in marketplace after approval</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center text-gray-400 text-sm">
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-orange-400 border-t-transparent mr-2"></div>
+              Redirecting to marketplace...
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

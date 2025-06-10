@@ -53,8 +53,8 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
         onClick={onClick}
         className={`
         group
-        p-5
-        rounded-2xl 
+        p-4 md:p-5
+        rounded-xl 
         border-2
         transition-all
         duration-300
@@ -64,8 +64,8 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
         transform hover:scale-[1.02]
         ${
           isActive
-            ? "border-purple-500 bg-gradient-to-br from-purple-900/40 to-pink-900/40 shadow-purple-500/20 ring-1 ring-purple-400/30"
-            : "border-gray-600 bg-gray-800/90 hover:border-gray-500 hover:bg-gray-700/90 hover:shadow-purple-500/10"
+            ? "border-orange-500 bg-gradient-to-br from-orange-900/30 to-orange-800/30 shadow-orange-500/20 ring-1 ring-orange-400/30"
+            : "border-gray-700 bg-gray-800/90 hover:border-orange-500/50 hover:bg-gray-800 hover:shadow-orange-500/10"
         }
       `}
       >
@@ -73,41 +73,41 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg transition-all duration-300 ${
+              <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center font-bold text-lg md:text-xl transition-all duration-300 ${
                 isActive 
-                  ? "bg-white/20 text-white" 
-                  : "bg-gray-700 text-gray-300 group-hover:bg-gray-600"
+                  ? "bg-orange-500/20 text-orange-400 ring-2 ring-orange-400/30" 
+                  : "bg-gray-700 text-gray-300 group-hover:bg-gray-600 group-hover:text-orange-300"
               }`}>
                 {module}
               </div>
               <div>
-                <h3 className="font-bold text-white text-lg">
+                <h3 className="font-bold text-white text-base md:text-lg">
                   Module {module}
                 </h3>
-                <span className={`text-sm px-3 py-1 rounded-full font-medium transition-all duration-300 ${
+                <span className={`text-xs md:text-sm px-2 md:px-3 py-1 rounded-full font-medium transition-all duration-300 ${
                   isActive
-                    ? "bg-white/20 text-purple-100"
-                    : "bg-gray-700 text-gray-300 group-hover:bg-gray-600"
+                    ? "bg-orange-500/20 text-orange-300"
+                    : "bg-gray-700 text-gray-400 group-hover:bg-gray-600 group-hover:text-gray-300"
                 }`}>
                   {topics} topics
                 </span>
               </div>
             </div>
             <ChevronDown
-              className={`w-6 h-6 transition-all duration-300 ${
+              className={`w-5 h-5 md:w-6 md:h-6 transition-all duration-300 ${
                 isActive 
-                  ? "rotate-180 text-purple-300" 
-                  : "text-gray-400 group-hover:text-gray-300"
+                  ? "rotate-180 text-orange-400" 
+                  : "text-gray-500 group-hover:text-orange-400"
               }`}
             />
           </div>
 
           {/* Progress Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs md:text-sm">
               <span className="text-gray-300 font-medium">Progress</span>
               <span className={`font-bold ${
-                isActive ? "text-purple-300" : "text-gray-300"
+                isActive ? "text-orange-300" : "text-gray-300 group-hover:text-orange-300"
               }`}>
                 {numberOfVideosCompleted || 0}/{numberOfVideos} videos
               </span>
@@ -119,8 +119,8 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
             
             {/* Completion percentage */}
             <div className="text-right">
-              <span className={`text-sm font-medium ${
-                isActive ? "text-purple-200" : "text-gray-400"
+              <span className={`text-xs md:text-sm font-medium ${
+                isActive ? "text-orange-200" : "text-gray-400 group-hover:text-orange-200"
               }`}>
                 {numberOfVideos > 0 
                   ? Math.round(((numberOfVideosCompleted || 0) / numberOfVideos) * 100)
