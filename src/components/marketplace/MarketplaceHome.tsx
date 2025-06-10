@@ -5,7 +5,6 @@ import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters } from '../../
 import { MarketplaceService } from '../../services/marketplace';
 import { ItemCard } from './ItemCard';
 import { FilterSection } from './FilterSection';
-import { MobileNavigation } from './MobileNavigation';
 import { SafetyDisclaimer } from './SafetyDisclaimer';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -125,12 +124,8 @@ export const MarketplaceHome: React.FC = () => {
                 item={item} 
                 onContactRequest={() => handleContactRequest(item)}
               />
-            ))}          </div>
-        )}
+            ))}          </div>        )}
       </div>
-      
-      {/* Mobile Navigation */}
-      <MobileNavigation />
 
       {/* Global Safety Disclaimer Modal */}
       <SafetyDisclaimer

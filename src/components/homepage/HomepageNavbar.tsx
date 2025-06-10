@@ -61,20 +61,35 @@ const HomepageNavbar = () => {
             >
               Get Started
             </Link>
-          </div>
-
-          {/* Mobile Menu Button */}
+          </div>          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-white hover:text-orange-400 transition-colors"
+            className="relative z-50 md:hidden text-white hover:text-orange-400 transition-all duration-300"
+            aria-label="Toggle mobile menu"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <div className="relative w-6 h-6 flex items-center justify-center">
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
+                }`}
+              />
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'opacity-0' : 'opacity-100'
+                }`}
+              />
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
+                }`}
+              />
+            </div>
           </button>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-black/95 backdrop-blur-md border-t border-gray-800 py-4">
+        </div>        {/* Mobile Menu */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="bg-black/95 backdrop-blur-md border-t border-gray-800 py-4">
             <div className="flex flex-col space-y-4">
               <Link 
                 href="/" 
@@ -128,7 +143,7 @@ const HomepageNavbar = () => {
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

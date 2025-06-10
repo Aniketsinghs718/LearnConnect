@@ -73,9 +73,8 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
   };
 
   const navItems = getNavItems();
-  return (
-    <nav
-      className={`bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10`}
+  return (    <nav
+      className={`relative z-50 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
@@ -141,15 +140,34 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-gray-300 hover:text-orange-400 transition-colors duration-300"
+            className="relative z-50 md:hidden p-2 text-gray-300 hover:text-orange-400 transition-all duration-300"
+            aria-label="Toggle mobile menu"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <div className="relative w-6 h-6 flex items-center justify-center">
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
+                }`}
+              />
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'opacity-0' : 'opacity-100'
+                }`}
+              />
+              <span 
+                className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
+                }`}
+              />
+            </div>
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg">
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg">
             <div className="px-4 py-6 space-y-4">
               {courseInfo && (
                 <div className="pb-4 border-b border-gray-700">
@@ -205,7 +223,7 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

@@ -134,7 +134,7 @@ export default function NotificationDropdown({ mounted }: NotificationDropdownPr
       </button>
 
       {showDropdown && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 md:-translate-x-0 w-11/12 max-w-sm z-50 md:absolute md:transform-none md:top-auto md:left-auto md:right-0 md:mt-2 md:w-80">
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 md:-translate-x-0 w-11/12 max-w-sm z-40 md:absolute md:transform-none md:top-auto md:left-auto md:right-0 md:mt-2 md:w-80">
           <div className="bg-base-100 rounded-lg shadow-lg w-full flex flex-col">
             <div className="p-3 border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-base-200 rounded-t-lg">
               <h3 className="text-sm font-medium text-base-content">

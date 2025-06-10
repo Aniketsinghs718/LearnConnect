@@ -33,7 +33,7 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10">
+    <nav className="relative z-50 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
@@ -90,16 +90,35 @@ const Navbar = () => {
             <UserMenu mounted={mounted} />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 text-gray-300 hover:text-orange-400 transition-colors duration-300"
+              className="relative z-50 p-2 text-gray-300 hover:text-orange-400 transition-all duration-300 group"
+              aria-label="Toggle mobile menu"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <div className="relative w-6 h-6 flex items-center justify-center">
+                <span 
+                  className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                    isMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
+                  }`}
+                />
+                <span 
+                  className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                    isMenuOpen ? 'opacity-0' : 'opacity-100'
+                  }`}
+                />
+                <span 
+                  className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                    isMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
+                  }`}
+                />
+              </div>
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg">
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+          <div className="bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg">
             <div className="px-4 py-6 space-y-4">
               <Link
                 href="/"
@@ -144,7 +163,7 @@ const Navbar = () => {
               )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

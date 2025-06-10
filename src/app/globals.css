@@ -139,3 +139,47 @@ code {
     linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
+
+/* Hamburger menu animation styles */
+.hamburger-line {
+  transition: all 0.3s ease-in-out;
+  transform-origin: center;
+}
+
+/* Z-index utilities for proper stacking */
+.z-navbar {
+  z-index: 50;
+}
+
+.z-search {
+  z-index: 40;
+}
+
+.z-dropdown {
+  z-index: 30;
+}
+
+/* Smooth hamburger animation */
+@keyframes hamburger-top-open {
+  0% { transform: translateY(-6px) rotate(0deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(45deg); }
+}
+
+@keyframes hamburger-top-close {
+  0% { transform: translateY(0) rotate(45deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-6px) rotate(0deg); }
+}
+
+@keyframes hamburger-bottom-open {
+  0% { transform: translateY(6px) rotate(0deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0) rotate(-45deg); }
+}
+
+@keyframes hamburger-bottom-close {
+  0% { transform: translateY(0) rotate(-45deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(6px) rotate(0deg); }
+}

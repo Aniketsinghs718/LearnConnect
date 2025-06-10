@@ -98,7 +98,7 @@ export default function FormSelect({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute z-50 w-full mt-2 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl max-h-60 overflow-auto"
+              className="absolute z-30 w-full mt-2 bg-gray-900/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl max-h-60 overflow-auto"
             >
               <div className="py-2">
                 {options.map((option, index) => {
@@ -134,7 +134,7 @@ export default function FormSelect({
       {/* Backdrop to close dropdown */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-20"
           onClick={() => setIsOpen(false)}
         />
       )}
