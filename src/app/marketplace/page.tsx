@@ -1,8 +1,13 @@
 
+import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { MarketplaceHome } from '../../components/marketplace/MarketplaceHome';
 
 export default function MarketplacePage() {
-  return <MarketplaceHome />;
+  return (
+    <ProtectedRoute>
+      <MarketplaceHome />
+    </ProtectedRoute>
+  );
 }
 
 export const metadata = {

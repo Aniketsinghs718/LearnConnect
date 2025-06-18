@@ -4,29 +4,19 @@ import Link from 'next/link';
 import { LogIn, UserPlus, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserMenuProps {
   mounted: boolean;
 }
 
 export default function UserMenu({ mounted }: UserMenuProps) {
-  const [user, setUser] = useState<any>(null);
+  const { profile, isAuthenticated } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    // Check for user profile in localStorage
-    const userProfile = localStorage.getItem("userProfile");
-    if (userProfile) {
-      setUser(JSON.parse(userProfile));
-    }
-  }, [mounted]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("userProfile");
-    setUser(null);
     router.push('/');
   };
 
@@ -34,14 +24,14 @@ export default function UserMenu({ mounted }: UserMenuProps) {
 
   return (
     <div className="flex items-center space-x-3">
-      {user ? (
+      {isAuthenticated && profile ? (
         <div className="flex items-center space-x-3">
           <Link 
             href="/auth/profile"
             className="px-4 py-2 rounded-full bg-gray-800 hover:bg-gray-700 border border-gray-600 transition-all duration-200 flex items-center space-x-2 text-gray-200 hover:text-orange-400"
           >
             <User className="w-4 h-4" />
-            <span>{user.name}</span>
+            <span>{profile.name}</span>
           </Link>
           <button 
             onClick={handleSignOut}

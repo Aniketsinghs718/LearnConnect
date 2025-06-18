@@ -1,8 +1,13 @@
 
+import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import { UserProfile } from '../../../components/marketplace/UserProfile';
 
 export default function UserProfilePage() {
-  return <UserProfile />;
+  return (
+    <ProtectedRoute>
+      <UserProfile />
+    </ProtectedRoute>
+  );
 }
 
 export const metadata = {

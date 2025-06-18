@@ -9,6 +9,8 @@ import FormInput from "@/components/ui/FormInput";
 import FormSelect from "@/components/ui/FormSelect";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useAuth } from "@/hooks/useAuth";
 
 const branches = [
   { value: "comps", label: "Computer Science" },
@@ -52,9 +54,10 @@ const colleges = [
   "Vishwatmak Om Gurudev College of Engineering",
 ];
 
-export default function ProfilePage() {
+function ProfilePage() {
+  const { profile: userProfile } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -67,16 +70,10 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const userProfile = localStorage.getItem("userProfile");
     if (userProfile) {
-      setProfile(JSON.parse(userProfile));
-    } else {
-      // Redirect to login if no profile found
-      router.push("/auth/login");
-      return;
+      setProfile(userProfile);
     }
-    setLoading(false);
-  }, [router]);
+  }, [userProfile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setProfile({ ...profile, [e.target.name]: e.target.value });
@@ -389,4 +386,14 @@ export default function ProfilePage() {
       </motion.form>
     </AuthLayout>
   );
-} 
+}
+
+function ProfilePageWrapper() {
+  return (
+    <ProtectedRoute>
+      <ProfilePage />
+    </ProtectedRoute>
+  );
+}
+
+export default ProfilePageWrapper;

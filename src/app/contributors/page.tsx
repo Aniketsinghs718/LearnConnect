@@ -2,6 +2,7 @@
 import { Github } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 interface Contributor {
   id: number;
@@ -11,7 +12,7 @@ interface Contributor {
   contributions: number;
 }
 
-export default function Contributors() {
+function Contributors() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,3 +117,13 @@ export default function Contributors() {
     </div>
   );
 }
+
+function ProtectedContributors() {
+  return (
+    <ProtectedRoute>
+      <Contributors />
+    </ProtectedRoute>
+  );
+}
+
+export default ProtectedContributors;

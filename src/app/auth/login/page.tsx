@@ -7,6 +7,7 @@ import AuthLayout from "@/components/layout/AuthLayout";
 import LoginForm from "@/components/forms/LoginForm";
 import RegisterForm from "@/components/forms/RegisterForm";
 import Alert from "@/components/ui/Alert";
+import PublicRoute from "@/components/auth/PublicRoute";
 import { createUserProfile, ensureUserProfile } from "@/utils/userProfile";
 
 interface RegisterFormData {
@@ -19,7 +20,7 @@ interface RegisterFormData {
   semester: string;
 }
 
-export default function AuthPage() {
+function AuthPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -203,3 +204,13 @@ export default function AuthPage() {
     </AuthLayout>
   );
 }
+
+function AuthPageWrapper() {
+  return (
+    <PublicRoute>
+      <AuthPage />
+    </PublicRoute>
+  );
+}
+
+export default AuthPageWrapper;

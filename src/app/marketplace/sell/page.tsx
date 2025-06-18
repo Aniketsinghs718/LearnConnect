@@ -1,8 +1,13 @@
 
+import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import { SellItemForm } from '../../../components/marketplace/SellItemForm';
 
 export default function SellItemPage() {
-  return <SellItemForm />;
+  return (
+    <ProtectedRoute>
+      <SellItemForm />
+    </ProtectedRoute>
+  );
 }
 
 export const metadata = {

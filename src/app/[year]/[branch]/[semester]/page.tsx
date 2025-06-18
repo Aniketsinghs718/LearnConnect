@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import ModuleCard from "@/components/ModuleCard";
 import TopicList from "@/components/TopicList";
 import CourseNavbar from "@/components/homepage/CourseNavbar";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { loadSubjectData, loadImportantLinksDataForSubject } from "@/services/fallbackData";
 import useProgress from "@/hook/useProgress";
 import { RotateCcw, X, BookOpen, ExternalLink } from "lucide-react";
@@ -542,4 +543,12 @@ const EngineeringCurriculum: React.FC = () => {
   );
 };
 
-export default EngineeringCurriculum;
+function ProtectedEngineeringCurriculum() {
+  return (
+    <ProtectedRoute>
+      <EngineeringCurriculum />
+    </ProtectedRoute>
+  );
+}
+
+export default ProtectedEngineeringCurriculum;

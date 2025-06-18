@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import AuthLayout from "@/components/layout/AuthLayout";
 import RegisterForm from "@/components/forms/RegisterForm";
 import Alert from "@/components/ui/Alert";
+import PublicRoute from "@/components/auth/PublicRoute";
 
 interface RegisterFormData {
   name: string;
@@ -17,7 +18,7 @@ interface RegisterFormData {
   semester: string;
 }
 
-export default function RegisterPage() {
+function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -106,4 +107,14 @@ export default function RegisterPage() {
       </div>
     </AuthLayout>
   );
-} 
+}
+
+function RegisterPageWrapper() {
+  return (
+    <PublicRoute>
+      <RegisterPage />
+    </PublicRoute>
+  );
+}
+
+export default RegisterPageWrapper;
