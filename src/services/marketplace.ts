@@ -1,71 +1,92 @@
 import { supabase } from '../lib/supabaseClient';
 import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters, CreateItemData } from '../types/marketplace';
 
-export class MarketplaceService {
-  // Get all categories
+export class MarketplaceService {  // Get all categories
   static async getCategories(): Promise<MarketplaceCategory[]> {
-    const { data, error } = await supabase
-      .from('marketplace_categories')
-      .select('*')
-      .order('name');
+    try {
+      const { data, error } = await supabase
+        .from('marketplace_categories')
+        .select('*')
+        .order('name');
 
-    if (error) throw error;
-    return data || [];
+      if (error) {
+        console.error('Supabase error loading categories:', error);
+        throw new Error(`Failed to load categories: ${error.message}`);
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error('Error in getCategories:', error);
+      // Re-throw with more context
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Unknown error loading categories');
+    }
   }  // Get items with filters
   static async getItems(filters: MarketplaceFilters = {}): Promise<MarketplaceItem[]> {
-    let query = supabase
-      .from('marketplace_items')
-      .select(`
-        *,
-        seller:users!marketplace_items_seller_id_fkey(*),
-        category:marketplace_categories(*)
-      `)
-      .eq('is_available', true)
-      .eq('verification_status', 'approved'); // Only show approved items
+    try {
+      let query = supabase
+        .from('marketplace_items')
+        .select(`
+          *,
+          seller:users!marketplace_items_seller_id_fkey(*),
+          category:marketplace_categories(*)
+        `)
+        .eq('is_available', true)
+        .eq('verification_status', 'approved'); // Only show approved items
 
-    // Apply filters
-    if (filters.category) {
-      query = query.eq('category_id', filters.category);
+      // Apply filters
+      if (filters.category) {
+        query = query.eq('category_id', filters.category);
+      }
+
+      if (filters.condition) {
+        query = query.eq('condition', filters.condition);
+      }
+
+      if (filters.college_name) {
+        query = query.ilike('college_name', `%${filters.college_name}%`);
+      }
+
+      if (filters.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+
+      switch (filters.sortBy) {
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        case 'oldest':
+          query = query.order('created_at', { ascending: true });
+          break;
+        case 'price_low_to_high':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price_high_to_low':
+          query = query.order('price', { ascending: false });
+          break;
+        default:
+          query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error } = await query;      if (error) {
+        console.error('Supabase error loading items:', error);
+        throw new Error(`Failed to load items: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Error in getItems:', error);
+      // Re-throw with more context
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Unknown error loading marketplace items');
     }
+  }
 
-    if (filters.condition) {
-      query = query.eq('condition', filters.condition);
-    }    if (filters.college_name) {
-      query = query.ilike('college_name', `%${filters.college_name}%`);
-    }
-
-    if (filters.search) {
-      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
-    }
-
-    switch (filters.sortBy) {
-      case 'newest':
-        query = query.order('created_at', { ascending: false });
-        break;
-      case 'oldest':
-        query = query.order('created_at', { ascending: true });
-        break;
-      case 'price_low_to_high':
-        query = query.order('price', { ascending: true });
-        break;
-      case 'price_high_to_low':
-        query = query.order('price', { ascending: false });
-        break;
-      default:
-        query = query.order('created_at', { ascending: false });
-        break;
-    }    const { data, error } = await query;
-
-    if (error) throw error;
-      // Add backward compatibility mapping
-    const items = (data || []).map(item => ({
-      ...item,
-      location: item.college_name, // Map college_name to location for backward compatibility
-      is_sold: !item.is_available // Map is_available to is_sold for backward compatibility
-    }));
-    
-    return items;
-  }  // Get item by ID
+  // Get item by ID
   static async getItemById(id: string): Promise<MarketplaceItem | null> {
     const { data, error } = await supabase
       .from('marketplace_items')

@@ -113,14 +113,10 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}
     >
       <body className="animate-fade-in bg-black text-white">
-        {/* <SessionProvider> Removed NextAuth SessionProvider since app uses Supabase Auth */}
-          {/* <ThemeProvider attribute="class"> */}
-            <ConditionalLayout>
-              {children}
-            </ConditionalLayout>
-            <Metrics />
-          {/* </ThemeProvider> */}
-        {/* </SessionProvider> */}
+        <ConditionalLayout>
+          {children}
+        </ConditionalLayout>
+        <Metrics />
       </body>
     </html>
   );

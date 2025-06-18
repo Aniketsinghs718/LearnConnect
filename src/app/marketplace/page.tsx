@@ -1,6 +1,6 @@
 
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
-import { MarketplaceHome } from '../../components/marketplace/MarketplaceHome';
+import MarketplaceHome from '../../components/marketplace/MarketplaceHome';
 
 export default function MarketplacePage() {
   return (
