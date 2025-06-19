@@ -17,11 +17,13 @@ export class MarketplaceService {  // Get all categories
       return data || [];
     } catch (error) {
       console.error('Error in getCategories:', error);
-      // Re-throw with more context
-      if (error instanceof Error) {
-        throw error;
+      // Return empty array for categories to prevent app breakdown
+      if (error instanceof Error && error.message.includes('Failed to load categories')) {
+        throw error; // Re-throw supabase errors
       }
-      throw new Error('Unknown error loading categories');
+      // For network or other unknown errors, return empty array
+      console.warn('Returning empty categories array due to unknown error');
+      return [];
     }
   }  // Get items with filters
   static async getItems(filters: MarketplaceFilters = {}): Promise<MarketplaceItem[]> {
@@ -70,7 +72,9 @@ export class MarketplaceService {  // Get all categories
           query = query.order('created_at', { ascending: false });
       }
 
-      const { data, error } = await query;      if (error) {
+      const { data, error } = await query;
+
+      if (error) {
         console.error('Supabase error loading items:', error);
         throw new Error(`Failed to load items: ${error.message}`);
       }
@@ -78,11 +82,13 @@ export class MarketplaceService {  // Get all categories
       return data || [];
     } catch (error) {
       console.error('Error in getItems:', error);
-      // Re-throw with more context
-      if (error instanceof Error) {
-        throw error;
+      // Return empty array instead of throwing to prevent infinite loading
+      if (error instanceof Error && error.message.includes('Failed to load items')) {
+        throw error; // Re-throw supabase errors
       }
-      throw new Error('Unknown error loading marketplace items');
+      // For network or other unknown errors, return empty array
+      console.warn('Returning empty array due to unknown error');
+      return [];
     }
   }
 

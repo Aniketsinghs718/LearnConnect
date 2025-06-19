@@ -30,41 +30,72 @@ function RegisterPage() {
     setError('');
     setSuccess('');
     
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-    });
-    
-    if (signUpError) {
-      setError(signUpError.message);
-      setLoading(false);
-      return;
-    }
-    
-    const { error: insertError } = await supabase.from('users').insert([
-      {
-        id: data.user?.id,
-        name: formData.name,
+    try {
+      // First, create the auth user with metadata
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
-        college: formData.college,
-        branch: formData.branch,
-        year: formData.year,
-        semester: formData.semester,
-      },
-    ]);
-    
-    if (insertError) {
-      setError(insertError.message);
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            college: formData.college,
+            branch: formData.branch,
+            year: formData.year,
+            semester: formData.semester
+          }
+        }
+      });
+      
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!data.user) {
+        setError('Failed to create user account.');
+        setLoading(false);
+        return;
+      }
+
+      // The trigger will automatically create the profile from metadata
+      // But let's also manually ensure it's created with all data
+      try {
+        const { error: insertError } = await supabase.from('users').upsert([
+          {
+            id: data.user.id,
+            name: formData.name,
+            email: formData.email,
+            college: formData.college,
+            branch: formData.branch,
+            year: formData.year,
+            semester: formData.semester,
+          },
+        ]);
+        
+        if (insertError) {
+          console.error('Profile creation error:', insertError);
+          // Don't fail the registration if profile creation fails
+          // The trigger should handle it
+        }
+      } catch (profileError) {
+        console.error('Manual profile creation failed:', profileError);
+        // Continue anyway, trigger should handle it
+      }
+      
+      setSuccess('Registration successful! You can now sign in with your credentials.');
       setLoading(false);
-      return;
+      
+      // Redirect to login page after successful registration
+      setTimeout(() => {
+        router.push('/auth/login');
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError('An unexpected error occurred during registration.');
+      setLoading(false);
     }
-    
-    setSuccess('Registration successful! You can now sign in with your credentials.');
-    setLoading(false);
-    // Optionally redirect to login page after successful registration
-    setTimeout(() => {
-      router.push('/auth/login');
-    }, 2000);
   };
 
   return (

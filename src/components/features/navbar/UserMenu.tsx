@@ -15,9 +15,24 @@ export default function UserMenu({ mounted }: UserMenuProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("userProfile");
-    router.push('/');
+    try {
+      // Clear localStorage first
+      localStorage.removeItem("userProfile");
+      localStorage.removeItem("selectedBranch");
+      localStorage.removeItem("selectedYear");
+      localStorage.removeItem("selectedSemester");
+      localStorage.removeItem("marketplace_cache_v3");
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Force redirect to homepage
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Sign out error:', error);
+      // Force redirect even if sign out fails
+      window.location.href = '/';
+    }
   };
 
   if (!mounted) return null;

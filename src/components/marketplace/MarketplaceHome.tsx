@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters } from '../../types/marketplace';
 import { MarketplaceService } from '../../services/marketplace';
 import { ItemCard } from './ItemCard';
@@ -10,8 +10,8 @@ import { LoadingSpinner } from '../ui/LoadingSpinner';
 import toast from 'react-hot-toast';
 
 // Simple cache - just localStorage
-const CACHE_KEY = 'marketplace_cache_v2';
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes - shorter duration
+const CACHE_KEY = 'marketplace_cache_v3'; // Updated version to clear old cache
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for better performance
 
 const getCache = () => {
   if (typeof window === 'undefined') return null;
@@ -35,13 +35,22 @@ const getCache = () => {
 const setCache = (items: MarketplaceItem[], categories: MarketplaceCategory[]) => {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({
-      items,
-      categories,
-      timestamp: Date.now()
-    }));
+    // Only cache if we have valid data
+    if (items.length > 0 && categories.length > 0) {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        items,
+        categories,
+        timestamp: Date.now()
+      }));
+    }
   } catch (error) {
     console.error('Cache error:', error);
+    // Clear cache if there's an error storing
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch (clearError) {
+      console.error('Cache clear error:', clearError);
+    }
   }
 };
 
@@ -50,22 +59,26 @@ const MarketplaceHome: React.FC = () => {
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [allItems, setAllItems] = useState<MarketplaceItem[]>([]); // Store all items for filtering
   const [loading, setLoading] = useState(true);
-  const [filterLoading, setFilterLoading] = useState(false); // Separate loading for filters
+  const [filterLoading, setFilterLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<MarketplaceFilters>({});
   const [showSafetyDisclaimer, setShowSafetyDisclaimer] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
+  
+  // Use useRef for timeout to avoid dependency issues
+  const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     let mounted = true;
     
     const loadData = async () => {
       try {
-        // Check cache immediately
+        // Check cache immediately for fast initial load
         const cached = getCache();
         if (cached && mounted) {
           console.log('Using cached data');
           setItems(cached.items);
-          setAllItems(cached.items); // Store all items for filtering
+          setAllItems(cached.items);
           setCategories(cached.categories);
           setLoading(false);
           return;
@@ -74,26 +87,49 @@ const MarketplaceHome: React.FC = () => {
         if (mounted) {
           console.log('Loading fresh data');
           setLoading(true);
+          setError(null);
 
-          // Load fresh data
-          const [categoriesData, itemsData] = await Promise.all([
-            MarketplaceService.getCategories().catch(() => []),
-            MarketplaceService.getItems({}).catch(() => [])
-          ]);
+          // Add timeout to prevent infinite loading
+          const loadingTimeout = setTimeout(() => {
+            if (mounted) {
+              console.warn('Loading timeout reached');
+              setError('Loading is taking too long. Please try refreshing the page.');
+              setLoading(false);
+            }
+          }, 15000); // 15 second timeout
 
-          if (mounted) {
-            setCategories(categoriesData);
-            setItems(itemsData);
-            setAllItems(itemsData); // Store all items for filtering
-            setCache(itemsData, categoriesData);
-            console.log('Data loaded and cached');
+          try {
+            // Load fresh data with error handling
+            const [categoriesData, itemsData] = await Promise.all([
+              MarketplaceService.getCategories().catch(err => {
+                console.error('Categories load error:', err);
+                return [];
+              }),
+              MarketplaceService.getItems({}).catch(err => {
+                console.error('Items load error:', err);
+                return [];
+              })
+            ]);
+
+            clearTimeout(loadingTimeout);
+
+            if (mounted) {
+              setCategories(categoriesData);
+              setItems(itemsData);
+              setAllItems(itemsData);
+              setCache(itemsData, categoriesData);
+              console.log('Data loaded and cached');
+            }
+          } catch (error) {
+            clearTimeout(loadingTimeout);
+            throw error;
           }
         }
 
       } catch (error) {
         console.error('Loading error:', error);
         if (mounted) {
-          setError('Failed to load marketplace');
+          setError('Failed to load marketplace. Please check your connection and try again.');
         }
       } finally {
         if (mounted) {
@@ -107,9 +143,17 @@ const MarketplaceHome: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, []);  // Handle filter changes
+  }, []);  // Handle filter changes with proper debouncing
   useEffect(() => {
-    let mounted = true;
+    // Clear any existing timeouts
+    if (filterTimeoutRef.current) {
+      clearTimeout(filterTimeoutRef.current);
+      filterTimeoutRef.current = null;
+    }
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
     
     // Check if filters are empty or cleared
     const hasActiveFilters = Object.values(filters).some(value => 
@@ -117,55 +161,77 @@ const MarketplaceHome: React.FC = () => {
     );
 
     if (!hasActiveFilters) {
-      // No filters applied - show all items
-      if (mounted) {
-        setItems(allItems);
-      }
+      // No filters applied - show all items immediately
+      setItems(allItems);
+      setFilterLoading(false);
       return;
     }
 
-    // Apply filters
-    const loadFilteredItems = async () => {
+    // Show loading state immediately for better UX
+    setFilterLoading(true);
+
+    // Safety timeout to prevent stuck loading
+    loadingTimeoutRef.current = setTimeout(() => {
+      console.warn('Filter loading timeout - forcing stop');
+      setFilterLoading(false);
+      setItems(allItems); // Show all items as fallback
+    }, 8000); // 8 second safety timeout
+
+    // Debounce the actual API call
+    filterTimeoutRef.current = setTimeout(async () => {
       try {
-        if (mounted) {
-          setFilterLoading(true);
-        }
-        
+        console.log('Applying filters:', filters);
         const itemsData = await MarketplaceService.getItems(filters);
         
-        if (mounted) {
-          setItems(itemsData);
+        // Clear the safety timeout since we got results
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = null;
         }
+        
+        setItems(itemsData);
+        setFilterLoading(false);
+        console.log('Filter results loaded:', itemsData.length, 'items');
       } catch (error) {
         console.error('Filter error:', error);
-        if (mounted) {
-          toast.error('Failed to filter items');
-          // On error, show all items
-          setItems(allItems);
+        
+        // Clear the safety timeout
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = null;
         }
-      } finally {
-        if (mounted) {
-          setFilterLoading(false);
-        }
+        
+        // On error, show all items and stop loading
+        setItems(allItems);
+        setFilterLoading(false);
+        console.warn('Failed to filter items, showing all items');
       }
-    };
-
-    loadFilteredItems();
+    }, 300); // 300ms debounce
     
-    return () => {
-      mounted = false;
-    };
   }, [filters, allItems]);
 
   const handleFilterChange = (newFilters: MarketplaceFilters) => {
+    console.log('Filter change requested:', newFilters);
     setFilters(newFilters);
   };
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current);
+      }
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleContactRequest = () => {
     // ItemCard handles its own logic
   };
   // Error state
-  if (error) {
+  if (error && items.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
@@ -174,7 +240,10 @@ const MarketplaceHome: React.FC = () => {
             <h2 className="text-2xl font-bold text-white mb-4">Something went wrong</h2>
             <p className="text-gray-300 mb-6 leading-relaxed">{error}</p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                setError(null);
+                window.location.reload();
+              }}
               className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white px-8 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Try Again
@@ -214,6 +283,15 @@ const MarketplaceHome: React.FC = () => {
             <div className="inline-flex items-center space-x-3 bg-gray-800/70 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-600/50">
               <LoadingSpinner />
               <span className="text-gray-300 font-medium">Updating results...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Show error if there's one but we still have some items to show */}
+        {error && items.length > 0 && (
+          <div className="text-center py-4">
+            <div className="inline-flex items-center space-x-3 bg-yellow-800/70 backdrop-blur-sm px-6 py-3 rounded-full border border-yellow-600/50">
+              <span className="text-yellow-300 font-medium">⚠️ {error}</span>
             </div>
           </div>
         )}        {/* Items Grid */}

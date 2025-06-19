@@ -30,48 +30,43 @@ export function useAuth(): AuthState {
   useEffect(() => {
     let mounted = true;
 
-    // Check localStorage immediately for faster loading
-    const checkLocalStorage = () => {
-      if (typeof window !== 'undefined') {
-        const localProfile = localStorage.getItem('userProfile');
-        if (localProfile) {
-          try {
-            const parsedProfile = JSON.parse(localProfile);
-            setProfile(parsedProfile);
-            setLoading(false); // Stop loading immediately if we have local data
-            return parsedProfile;
-          } catch (error) {
-            localStorage.removeItem('userProfile');
-          }
-        }
-      }
-      return null;
-    };
-
-    // Initialize auth
+    // Initialize auth - Always verify session first, don't rely on localStorage
     const initializeAuth = async () => {
       try {
-        // First check localStorage for immediate response
-        const localProfile = checkLocalStorage();
-        
-        // Then verify session with Supabase
+        // Always check session first to prevent auto-login from stale localStorage
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted) {
           if (session?.user) {
             setUser(session.user);
             
-            if (!localProfile) {
-              // Only load from DB if no local profile
+            // Check localStorage only if we have a valid session
+            const localProfile = localStorage.getItem('userProfile');
+            if (localProfile) {
+              try {
+                const parsedProfile = JSON.parse(localProfile);
+                // Verify the localStorage profile matches the current user
+                if (parsedProfile.id === session.user.id) {
+                  setProfile(parsedProfile);
+                  setLoading(false);
+                } else {
+                  // Profile doesn't match current user, clear and reload
+                  localStorage.removeItem('userProfile');
+                  await loadUserProfile(session.user.id);
+                }
+              } catch (error) {
+                localStorage.removeItem('userProfile');
+                await loadUserProfile(session.user.id);
+              }
+            } else {
+              // No local profile, load from DB
               await loadUserProfile(session.user.id);
             }
           } else {
             // No session - clear everything
-            if (localProfile) {
-              localStorage.removeItem('userProfile');
-              setProfile(null);
-            }
+            localStorage.removeItem('userProfile');
             setUser(null);
+            setProfile(null);
             setLoading(false);
           }
         }
@@ -88,15 +83,18 @@ export function useAuth(): AuthState {
       async (event, session) => {
         if (!mounted) return;
 
+        console.log('Auth state change:', event, !!session?.user);
+
         if (session?.user) {
           setUser(session.user);
           
-          // Load profile if we don't have one
-          if (!profile) {
+          // Check if we need to reload profile
+          const currentProfile = profile;
+          if (!currentProfile || currentProfile.id !== session.user.id) {
             await loadUserProfile(session.user.id);
           }
         } else {
-          // User logged out
+          // User logged out - clear everything immediately
           setUser(null);
           setProfile(null);
           localStorage.removeItem('userProfile');
@@ -116,17 +114,37 @@ export function useAuth(): AuthState {
 
   const loadUserProfile = async (userId: string) => {
     try {
+      // Use the safe profile function that creates profile if missing
       const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .rpc('get_user_profile_safe', { user_id: userId });
 
       if (error) {
         console.error('Error loading user profile:', error);
-      } else if (data) {
-        setProfile(data);
-        localStorage.setItem('userProfile', JSON.stringify(data));
+        
+        // Fallback: try direct query and manual creation if needed
+        try {
+          const { data: directData, error: directError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle(); // Use maybeSingle instead of single to avoid error on 0 rows
+
+          if (directError) {
+            console.error('Direct query also failed:', directError);
+          } else if (directData) {
+            setProfile(directData);
+            localStorage.setItem('userProfile', JSON.stringify(directData));
+          } else {
+            // No profile exists, this shouldn't happen with the trigger
+            console.warn('No profile found and safe function failed. User needs to re-register.');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback profile loading failed:', fallbackError);
+        }
+      } else if (data && data.length > 0) {
+        const profileData = data[0];
+        setProfile(profileData);
+        localStorage.setItem('userProfile', JSON.stringify(profileData));
       }
     } catch (error) {
       console.error('Profile loading error:', error);

@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { Menu, X, Home, User, BookOpen, Settings, LogOut, ShoppingCart, Package, UserCircle, Shield } from "lucide-react";
 import { AdminService } from "@/services/adminService";
+import { supabase } from "@/lib/supabaseClient";
 
 interface CourseNavbarProps {
   courseInfo?: {
@@ -33,15 +34,25 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
     }
   };
 
-  const handleLogout = () => {
-    // Clear user data from localStorage
-    localStorage.removeItem("userProfile");
-    localStorage.removeItem("selectedBranch");
-    localStorage.removeItem("selectedYear");
-    localStorage.removeItem("selectedSemester");
-    
-    // Redirect to homepage
-    router.push("/");
+  const handleLogout = async () => {
+    try {
+      // Clear user data from localStorage
+      localStorage.removeItem("userProfile");
+      localStorage.removeItem("selectedBranch");
+      localStorage.removeItem("selectedYear");
+      localStorage.removeItem("selectedSemester");
+      localStorage.removeItem("marketplace_cache_v3");
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Force redirect to homepage
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if logout fails
+      window.location.href = '/';
+    }
   };
 
   // Determine navigation items based on current page

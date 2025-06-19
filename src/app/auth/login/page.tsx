@@ -51,8 +51,14 @@ function AuthPage() {
       try {
         const userData = await ensureUserProfile(data.user.id, data.user.email || email);
         localStorage.setItem('userProfile', JSON.stringify(userData));
+        
+        // Show success and redirect after a delay
+        setSuccess('Login successful! Redirecting to homepage...');
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+        
         setLoading(false);
-        router.push('/');
       } catch (profileError) {
         console.error('Profile error:', profileError);
         setError('Failed to load user profile. Please try again.');

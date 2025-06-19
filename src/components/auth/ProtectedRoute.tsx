@@ -24,16 +24,18 @@ export default function ProtectedRoute({
   // Add timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
-      setTimeoutReached(true);
-    }, 10000); // 10 second timeout
+      if (loading && !isAuthenticated) {
+        setTimeoutReached(true);
+      }
+    }, 8000); // Reduced to 8 seconds
 
     return () => clearTimeout(timeout);
-  }, []);
+  }, [loading, isAuthenticated]);
 
   useEffect(() => {
     if (loading && !timeoutReached) return;
 
-    // If loading has timed out, try to redirect to login
+    // If loading has timed out, redirect to login
     if (timeoutReached && !isAuthenticated) {
       console.warn('Authentication check timed out, redirecting to login');
       if (!hasRedirected) {
@@ -43,7 +45,7 @@ export default function ProtectedRoute({
       return;
     }
 
-    // If not authenticated, redirect to login
+    // If not authenticated and not loading, redirect to login
     if (!loading && !isAuthenticated) {
       if (!hasRedirected) {
         setHasRedirected(true);
