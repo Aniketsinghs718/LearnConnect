@@ -88,11 +88,9 @@ export function useAuth(): AuthState {
         if (session?.user) {
           setUser(session.user);
           
-          // Check if we need to reload profile
-          const currentProfile = profile;
-          if (!currentProfile || currentProfile.id !== session.user.id) {
-            await loadUserProfile(session.user.id);
-          }
+          // Always reload profile on auth state change to ensure consistency
+          // This prevents stale profile data issues
+          await loadUserProfile(session.user.id);
         } else {
           // User logged out - clear everything immediately
           setUser(null);
@@ -131,24 +129,32 @@ export function useAuth(): AuthState {
 
           if (directError) {
             console.error('Direct query also failed:', directError);
+            setLoading(false);
           } else if (directData) {
             setProfile(directData);
             localStorage.setItem('userProfile', JSON.stringify(directData));
+            setLoading(false);
           } else {
             // No profile exists, this shouldn't happen with the trigger
             console.warn('No profile found and safe function failed. User needs to re-register.');
+            setLoading(false);
           }
         } catch (fallbackError) {
           console.error('Fallback profile loading failed:', fallbackError);
+          setLoading(false);
         }
       } else if (data && data.length > 0) {
         const profileData = data[0];
         setProfile(profileData);
         localStorage.setItem('userProfile', JSON.stringify(profileData));
+        setLoading(false);
+      } else {
+        // No profile data returned
+        console.warn('No profile data returned from safe function');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Profile loading error:', error);
-    } finally {
       setLoading(false);
     }
   };

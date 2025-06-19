@@ -45,18 +45,20 @@ function AuthPage() {
       }
 
       // Wait a moment for auth context to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       // Try to get user profile, create if missing
       try {
         const userData = await ensureUserProfile(data.user.id, data.user.email || email);
-        localStorage.setItem('userProfile', JSON.stringify(userData));
         
-        // Show success and redirect after a delay
-        setSuccess('Login successful! Redirecting to homepage...');
+        // Don't manually set localStorage - let useAuth handle it
+        // localStorage.setItem('userProfile', JSON.stringify(userData));
+        
+        // Show success and redirect after a delay to allow auth state to settle
+        setSuccess('Login successful! Redirecting to dashboard...');
         setTimeout(() => {
           router.push('/');
-        }, 1500);
+        }, 800); // Reduced delay for better UX
         
         setLoading(false);
       } catch (profileError) {

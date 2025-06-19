@@ -20,20 +20,30 @@ export default function ProtectedRoute({
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Add timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading && !isAuthenticated) {
+      if (loading && !isAuthenticated && !initialCheckDone) {
+        console.warn('Authentication timeout reached');
         setTimeoutReached(true);
       }
-    }, 8000); // Reduced to 8 seconds
+    }, 5000); // 5 second timeout
 
     return () => clearTimeout(timeout);
-  }, [loading, isAuthenticated]);
+  }, [loading, isAuthenticated, initialCheckDone]);
+
+  // Mark initial check as done when we get a definitive auth state
+  useEffect(() => {
+    if (!loading && (isAuthenticated || (!isAuthenticated && !user))) {
+      setInitialCheckDone(true);
+    }
+  }, [loading, isAuthenticated, user]);
 
   useEffect(() => {
-    if (loading && !timeoutReached) return;
+    // Only proceed if we've completed initial check or timeout reached
+    if (loading && !timeoutReached && !initialCheckDone) return;
 
     // If loading has timed out, redirect to login
     if (timeoutReached && !isAuthenticated) {
@@ -46,7 +56,7 @@ export default function ProtectedRoute({
     }
 
     // If not authenticated and not loading, redirect to login
-    if (!loading && !isAuthenticated) {
+    if (!loading && !isAuthenticated && initialCheckDone) {
       if (!hasRedirected) {
         setHasRedirected(true);
         router.push(redirectTo);
@@ -62,10 +72,10 @@ export default function ProtectedRoute({
       }
       return;
     }
-  }, [user, profile, loading, isAuthenticated, requireAdmin, redirectTo, router, hasRedirected, timeoutReached]);
+  }, [user, profile, loading, isAuthenticated, requireAdmin, redirectTo, router, hasRedirected, timeoutReached, initialCheckDone]);
 
-  // Show loading spinner while checking authentication (with timeout)
-  if (loading && !timeoutReached) {
+  // Show loading spinner while checking authentication
+  if (loading && !timeoutReached && !initialCheckDone) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
