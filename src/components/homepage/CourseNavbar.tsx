@@ -24,6 +24,33 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
     checkAdminStatus();
   }, []);
 
+  // Close menu on escape key press
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMenuOpen]);
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
+
+  const closeMenu = () => setIsMenuOpen(false);
+
   const checkAdminStatus = async () => {
     try {
       const adminStatus = await AdminService.isAdmin();
@@ -84,13 +111,16 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
   };
 
   const navItems = getNavItems();
-  return (    <nav
-      className={`relative z-50 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10`}
-    >
+  
+  return (
+    <>
+      <nav
+        className={`relative z-50 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10`}
+      >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3 group">            <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+          <Link href="/" className="flex items-center space-x-3 group transform hover:scale-105 transition-transform duration-200">            <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-500 rounded-xl flex items-center justify-center group-hover:scale-110 hover:bg-orange-600 transition-all duration-300">
               <span className="text-white font-bold text-lg md:text-xl">L</span>
             </div>
             <div>
@@ -121,7 +151,7 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-colors duration-300 group"
+                  className="flex items-center space-x-2 text-gray-300 hover:text-orange-400 transition-all duration-200 group transform hover:scale-105"
                 >
                   <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                   <span className="font-medium">{item.name}</span>
@@ -132,7 +162,7 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
             {isAdmin && (
               <Link
                 href="/admin"
-                className="flex items-center space-x-2 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 transition-all duration-300 group"
+                className="flex items-center space-x-2 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 transition-all duration-300 group transform hover:scale-105"
               >
                 <Shield className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" />
                 <span className="font-medium">Admin</span>
@@ -151,7 +181,7 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="relative z-50 md:hidden p-2 text-gray-300 hover:text-orange-400 transition-all duration-300"
+            className="relative z-60 md:hidden p-2 text-gray-300 hover:text-orange-400 transition-all duration-300 rounded-lg hover:bg-white/10 transform hover:scale-110"
             aria-label="Toggle mobile menu"
           >
             <div className="relative w-6 h-6 flex items-center justify-center">
@@ -173,37 +203,52 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
             </div>
           </button>
         </div>
+      </div>
+      </nav>
 
-        {/* Mobile Navigation */}
-        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-        }`}>
-          <div className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg">
-            <div className="px-4 py-6 space-y-4">
+      {/* Mobile Menu Backdrop */}
+      {isMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          onClick={closeMenu}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Navigation */}
+      <div className={`fixed top-16 md:top-20 left-0 right-0 z-50 md:hidden transition-all duration-300 ease-in-out transform ${
+        isMenuOpen 
+          ? 'translate-y-0 opacity-100 visible' 
+          : '-translate-y-full opacity-0 invisible'
+      }`}>
+        <div className="bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-2xl">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="space-y-1">
               {courseInfo && (
-                <div className="pb-4 border-b border-gray-700">
-                  <div className="text-sm text-gray-400 mb-2">Current Course</div>
+                <div className="pb-4 mb-4 border-b border-gray-700/50">
+                  <div className="text-sm text-gray-400 mb-3">Current Course</div>
                   <div className="flex flex-wrap gap-2">
-                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full">
+                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1.5 rounded-full hover:bg-orange-500/30 transition-colors duration-200">
                       {courseInfo.year.toUpperCase()}
                     </span>
-                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full">
+                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1.5 rounded-full hover:bg-orange-500/30 transition-colors duration-200">
                       {courseInfo.branch.toUpperCase()}
                     </span>
-                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full">
+                    <span className="text-xs bg-orange-500/20 text-orange-400 px-3 py-1.5 rounded-full hover:bg-orange-500/30 transition-colors duration-200">
                       {courseInfo.semester}
                     </span>
                   </div>
                 </div>
               )}
-                {navItems.map((item) => {
+              
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-3 text-gray-300 hover:text-orange-400 transition-colors duration-300 py-2"
+                    onClick={closeMenu}
+                    className="flex items-center space-x-3 text-gray-300 hover:text-orange-400 hover:bg-white/10 transition-all duration-200 py-3 px-4 rounded-lg transform hover:scale-105"
                   >
                     <Icon className="w-5 h-5" />
                     <span className="font-medium">{item.name}</span>
@@ -214,8 +259,8 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center space-x-3 bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-all duration-300"
+                  onClick={closeMenu}
+                  className="flex items-center space-x-3 bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-all duration-300 mt-2 transform hover:scale-105"
                 >
                   <Shield className="w-5 h-5" />
                   <span className="font-medium">Admin</span>
@@ -225,9 +270,9 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
               <button
                 onClick={() => {
                   handleLogout();
-                  setIsMenuOpen(false);
+                  closeMenu();
                 }}
-                className="flex items-center space-x-3 w-full bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-all duration-300 mt-4"
+                className="flex items-center space-x-3 w-full bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 transition-all duration-300 mt-4 transform hover:scale-105"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="font-medium">Logout</span>
@@ -236,6 +281,6 @@ export default function CourseNavbar({ courseInfo }: CourseNavbarProps) {
           </div>
         </div>
       </div>
-    </nav>
+    </>
   );
 }

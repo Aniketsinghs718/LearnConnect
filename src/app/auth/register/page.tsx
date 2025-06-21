@@ -22,6 +22,7 @@ function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const router = useRouter();
 
   // Handle register
@@ -29,9 +30,10 @@ function RegisterPage() {
     setLoading(true);
     setError('');
     setSuccess('');
+    setShowEmailConfirmation(false);
     
     try {
-      // First, create the auth user with metadata
+      // Create the auth user with metadata - the database trigger will handle profile creation
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -58,38 +60,27 @@ function RegisterPage() {
         return;
       }
 
-      // The trigger will automatically create the profile from metadata
-      // But let's also manually ensure it's created with all data
-      try {
-        const { error: insertError } = await supabase.from('users').upsert([
-          {
-            id: data.user.id,
-            name: formData.name,
-            email: formData.email,
-            college: formData.college,
-            branch: formData.branch,
-            year: formData.year,
-            semester: formData.semester,
-          },
-        ]);
+      // Check if email confirmation is required
+      if (!data.session) {
+        setShowEmailConfirmation(true);
+        setSuccess('Account created successfully! Please check your email to confirm your account before signing in.');
+        setLoading(false);
         
-        if (insertError) {
-          console.error('Profile creation error:', insertError);
-          // Don't fail the registration if profile creation fails
-          // The trigger should handle it
-        }
-      } catch (profileError) {
-        console.error('Manual profile creation failed:', profileError);
-        // Continue anyway, trigger should handle it
+        // Redirect to login page after showing confirmation message
+        setTimeout(() => {
+          router.push('/auth/login?message=Please check your email and confirm your account to sign in.');
+        }, 3000); // 3 seconds to read the message
+        return;
       }
-      
-      setSuccess('Registration successful! You can now sign in with your credentials.');
+
+      // If user is immediately signed in (no email confirmation required)
+      setSuccess('Registration successful! Redirecting to login page...');
       setLoading(false);
       
       // Redirect to login page after successful registration
       setTimeout(() => {
-        router.push('/auth/login');
-      }, 2000);
+        router.push('/auth/login?message=Registration successful! You can now sign in.');
+      }, 1500); // Shorter delay for immediate success
       
     } catch (error) {
       console.error('Registration error:', error);
@@ -116,6 +107,7 @@ function RegisterPage() {
         loading={loading}
         error={error}
         success={success}
+        showEmailConfirmation={showEmailConfirmation}
       />
 
       <div className="mt-8 text-center">

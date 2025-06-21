@@ -112,49 +112,78 @@ export function useAuth(): AuthState {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Use the safe profile function that creates profile if missing
-      const { data, error } = await supabase
-        .rpc('get_user_profile_safe', { user_id: userId });
+      // First try direct query (more reliable)
+      const { data: directData, error: directError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error loading user profile:', error);
-        
-        // Fallback: try direct query and manual creation if needed
-        try {
-          const { data: directData, error: directError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle(); // Use maybeSingle instead of single to avoid error on 0 rows
-
-          if (directError) {
-            console.error('Direct query also failed:', directError);
-            setLoading(false);
-          } else if (directData) {
-            setProfile(directData);
-            localStorage.setItem('userProfile', JSON.stringify(directData));
-            setLoading(false);
-          } else {
-            // No profile exists, this shouldn't happen with the trigger
-            console.warn('No profile found and safe function failed. User needs to re-register.');
-            setLoading(false);
-          }
-        } catch (fallbackError) {
-          console.error('Fallback profile loading failed:', fallbackError);
-          setLoading(false);
-        }
-      } else if (data && data.length > 0) {
-        const profileData = data[0];
-        setProfile(profileData);
-        localStorage.setItem('userProfile', JSON.stringify(profileData));
+      if (!directError && directData) {
+        setProfile(directData);
+        localStorage.setItem('userProfile', JSON.stringify(directData));
         setLoading(false);
-      } else {
-        // No profile data returned
-        console.warn('No profile data returned from safe function');
-        setLoading(false);
+        return;
       }
+
+      // If direct query fails, try the safe function (if it exists)
+      try {
+        const { data, error } = await supabase
+          .rpc('get_user_profile_safe', { user_id: userId });
+
+        if (!error && data && data.length > 0) {
+          setProfile(data[0]);
+          localStorage.setItem('userProfile', JSON.stringify(data[0]));
+          setLoading(false);
+          return;
+        }
+      } catch (rpcError) {
+        console.warn('get_user_profile_safe function not available:', rpcError);
+      }
+
+      // If both fail, try to create a minimal profile
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const minimalProfile = {
+          id: userId,
+          name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || 'User',
+          email: userData.user.email || '',
+          college: userData.user.user_metadata?.college || 'Not specified',
+          branch: userData.user.user_metadata?.branch || 'Not specified',
+          year: userData.user.user_metadata?.year || 'Not specified',
+          semester: userData.user.user_metadata?.semester || 'Not specified',
+          phone: '',
+          avatar_url: null,
+          bio: null,
+          preferences: {},
+          is_verified: false,
+          is_active: true,
+          is_admin: false
+        };
+
+        // Try to create the profile
+        const { data: createdData, error: createError } = await supabase
+          .from('users')
+          .insert([minimalProfile])
+          .select()
+          .single();
+
+        if (!createError && createdData) {
+          setProfile(createdData);
+          localStorage.setItem('userProfile', JSON.stringify(createdData));
+          setLoading(false);
+          return;
+        } else {
+          console.error('Failed to create profile:', createError);
+        }
+      }
+
+      // If everything fails
+      console.warn('Could not load or create user profile. User may need to re-register.');
+      setLoading(false);
+      
     } catch (error) {
-      console.error('Profile loading error:', error);
+      console.error('Error loading user profile:', error);
       setLoading(false);
     }
   };

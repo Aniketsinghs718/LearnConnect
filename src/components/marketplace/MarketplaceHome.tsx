@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MarketplaceItem, MarketplaceCategory, MarketplaceFilters } from '../../types/marketplace';
 import { MarketplaceService } from '../../services/marketplace';
 import { ItemCard } from './ItemCard';
+import { ItemModal } from './ItemModal';
 import { FilterSection } from './FilterSection';
 import { SafetyDisclaimer } from './SafetyDisclaimer';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
@@ -64,6 +65,7 @@ const MarketplaceHome: React.FC = () => {
   const [filters, setFilters] = useState<MarketplaceFilters>({});
   const [showSafetyDisclaimer, setShowSafetyDisclaimer] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
+  const [showItemModal, setShowItemModal] = useState(false);
   
   // Use useRef for timeout to avoid dependency issues
   const filterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -228,7 +230,17 @@ const MarketplaceHome: React.FC = () => {
   }, []);
 
   const handleContactRequest = () => {
-    // ItemCard handles its own logic
+    setShowSafetyDisclaimer(true);
+  };
+
+  const handleItemClick = (item: MarketplaceItem) => {
+    setSelectedItem(item);
+    setShowItemModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowItemModal(false);
+    setSelectedItem(null);
   };
   // Error state
   if (error && items.length === 0) {
@@ -304,6 +316,7 @@ const MarketplaceHome: React.FC = () => {
               <ItemCard
                 item={item}
                 onContactRequest={handleContactRequest}
+                onItemClick={handleItemClick}
               />
             </div>
           ))}
@@ -341,6 +354,14 @@ const MarketplaceHome: React.FC = () => {
             itemTitle={selectedItem.title}
           />
         )}
+
+        {/* Item Detail Modal */}
+        <ItemModal
+          item={selectedItem}
+          isOpen={showItemModal}
+          onClose={handleCloseModal}
+          onContactRequest={handleContactRequest}
+        />
       </div>
     </div>
   );
