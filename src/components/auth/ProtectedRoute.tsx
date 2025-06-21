@@ -16,34 +16,26 @@ export default function ProtectedRoute({
   requireAdmin = false, 
   redirectTo = '/auth/login' 
 }: ProtectedRouteProps) {
-  const { user, profile, loading, isAuthenticated } = useAuth();
+  const { user, profile, loading, isAuthLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const [hasRedirected, setHasRedirected] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
-  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   // Add timeout to prevent infinite loading
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (loading && !isAuthenticated && !initialCheckDone) {
+      if (isAuthLoading && !isAuthenticated) {
         console.warn('Authentication timeout reached');
         setTimeoutReached(true);
       }
     }, 5000); // 5 second timeout
 
     return () => clearTimeout(timeout);
-  }, [loading, isAuthenticated, initialCheckDone]);
-
-  // Mark initial check as done when we get a definitive auth state
-  useEffect(() => {
-    if (!loading && (isAuthenticated || (!isAuthenticated && !user))) {
-      setInitialCheckDone(true);
-    }
-  }, [loading, isAuthenticated, user]);
+  }, [isAuthLoading, isAuthenticated]);
 
   useEffect(() => {
-    // Only proceed if we've completed initial check or timeout reached
-    if (loading && !timeoutReached && !initialCheckDone) return;
+    // Wait for auth loading to complete before making any decisions
+    if (isAuthLoading && !timeoutReached) return;
 
     // If loading has timed out, redirect to login
     if (timeoutReached && !isAuthenticated) {
@@ -56,7 +48,7 @@ export default function ProtectedRoute({
     }
 
     // If not authenticated and not loading, redirect to login
-    if (!loading && !isAuthenticated && initialCheckDone) {
+    if (!isAuthLoading && !isAuthenticated) {
       if (!hasRedirected) {
         setHasRedirected(true);
         router.push(redirectTo);
@@ -65,17 +57,17 @@ export default function ProtectedRoute({
     }
 
     // If admin is required but user is not admin, redirect to marketplace
-    if (!loading && isAuthenticated && requireAdmin && !profile?.is_admin) {
+    if (!isAuthLoading && isAuthenticated && requireAdmin && !profile?.is_admin) {
       if (!hasRedirected) {
         setHasRedirected(true);
         router.push('/marketplace');
       }
       return;
     }
-  }, [user, profile, loading, isAuthenticated, requireAdmin, redirectTo, router, hasRedirected, timeoutReached, initialCheckDone]);
+  }, [user, profile, isAuthLoading, isAuthenticated, requireAdmin, redirectTo, router, hasRedirected, timeoutReached]);
 
   // Show loading spinner while checking authentication
-  if (loading && !timeoutReached && !initialCheckDone) {
+  if (isAuthLoading && !timeoutReached) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
@@ -87,7 +79,7 @@ export default function ProtectedRoute({
   }
 
   // If timeout reached and still loading, show error state
-  if (timeoutReached && loading && !isAuthenticated) {
+  if (timeoutReached && isAuthLoading && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">

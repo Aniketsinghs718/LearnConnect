@@ -13,21 +13,21 @@ export default function PublicRoute({
   children, 
   redirectTo = '/' 
 }: PublicRouteProps) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, isAuthLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) return;
+    if (isAuthLoading) return;
 
     // If already authenticated, redirect away from auth pages
     if (isAuthenticated) {
       router.push(redirectTo);
       return;
     }
-  }, [isAuthenticated, loading, redirectTo, router]);
+  }, [isAuthenticated, isAuthLoading, redirectTo, router]);
 
   // Show loading or nothing while checking authentication
-  if (loading || isAuthenticated) {
+  if (isAuthLoading || isAuthenticated) {
     return null;
   }
 
