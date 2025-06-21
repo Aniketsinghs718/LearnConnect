@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { motion } from "framer-motion";
-import { User, Mail, Building2, GraduationCap, Calendar, BookOpen, Save, LogOut, Lock, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Building2, GraduationCap, Calendar, BookOpen, Save, LogOut, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/layout/AuthLayout";
 import FormInput from "@/components/ui/FormInput";
 import FormSelect from "@/components/ui/FormSelect";
+import FormSearch from "@/components/ui/FormSearch";
 import Button from "@/components/ui/Button";
 import Alert from "@/components/ui/Alert";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -37,21 +38,71 @@ const semesters = [
 ];
 
 const colleges = [
-  "IIT Bombay",
-  "Veermata Jijabai Technological Institute (VJTI)",
-  "Sardar Patel Institute of Technology (SPIT)",
-  "Thadomal Shahani Engineering College (TSEC)",
-  "Dwarkadas J. Sanghvi College of Engineering (DJSCE)",
-  "K. J. Somaiya College of Engineering (KJSCE)",
-  "Fr. Conceicao Rodrigues College of Engineering (CRCE)",
-  "SIES Graduate School of Technology",
-  "Ramrao Adik Institute of Technology (RAIT)",
-  "Datta Meghe College of Engineering",
-  "Pillai College of Engineering",
-  "Terna Engineering College",
-  "Lokmanya Tilak College of Engineering",
-  "Shah & Anchor Kutchhi Engineering College",
-  "Vishwatmak Om Gurudev College of Engineering",
+  "Veermata Jijabai Technological Institut (VJTI), Matunga, Mumbai",
+  "Sardar Patel College of Engineering, Andheri",
+  "Svkm's Shri Bhagubhai Mafatlal Polytechnic & College of Engineering",
+  "Dr. Babasaheb Ambedkar Technological University, Lonere",
+  "Usha Mittal Institute of Technology SNDT Women's University, Mumbai",
+  "Institute of Chemical Technology, Matunga, Mumbai",
+  "Manjara Charitable Trust's Rajiv Gandhi Institute of Technology, Mumbai",
+  "Vidyalankar Institute of Technology, Wadala, Mumbai",
+  "Thakur Shyamnarayan Engineering College, Mumbai",
+  "Jawahar Education Society's Annasaheb Chudaman Patil College of Engineering,Kharghar, Navi Mumbai",
+  "Saraswati Education Society, Yadavrao Tasgaonkar Institute of Engineering & Technology, Karjat",
+  "Mahavir Education Trust's Shah & Anchor Kutchhi Engineering College, Mumbai",
+  "Saraswati Education Society's Saraswati College of Engineering,Kharghar Navi Mumbai",
+  "M.G.M.'s College of Engineering and Technology, Kamothe, Navi Mumbai",
+  "Thakur College of Engineering and Technology, Kandivali, Mumbai",
+  "Thadomal Shahani Engineering College, Bandra, Mumbai",
+  "Anjuman-I-Islam's M.H. Saboo Siddik College of Engineering, Byculla, Mumbai",
+  "Fr. Conceicao Rodrigues College of Engineering, Bandra,Mumbai",
+  "Vivekanand Education Society's Institute of Technology, Chembur, Mumbai",
+  "N.Y.S.S.'s Datta Meghe College of Engineering, Airoli, Navi Mumbai",
+  "Padmabhushan Vasantdada Patil Pratishthans College of Engineering, Sion,Mumbai",
+  "Bharati Vidyapeeth College of Engineering, Navi Mumbai",
+  "Terna Engineering College, Nerul, Navi Mumbai",
+  "Smt. Indira Gandhi College of Engineering, Navi Mumbai",
+  "Shivajirao S. Jondhale College of Engineering, Dombivali,Mumbai",
+  "Vidyavardhini's College of Engineering and Technology, Vasai",
+  "Lokmanya Tilak College of Engineering, Kopar Khairane, Navi Mumbai",
+  "Agnel Charities' FR. C. Rodrigues Institute of Technology, Vashi, Navi Mumbai",
+  "Konkan Gyanpeeth College of Engineering, Karjat",
+  "Shri Vile Parle Kelvani Mandal's Dwarkadas J. Sanghvi College of Engineering, Vile Parle,Mumbai",
+  "Hope Foundation and research center's Finolex Academy of Management and Technology, Ratnagiri",
+  "Rizvi Education Society's Rizvi College of Engineering, Bandra,Mumbai",
+  "Rajendra Mane College of Engineering & Technology Ambav Deorukh",
+  "Atharva College of Engineering,Malad(West),Mumbai",
+  "St. Francis Institute of Technology,Borivali, Mumbai",
+  "S.S.P.M.'s College of Engineering, Kankavli",
+  "Mahatma Education Society's Pillai College of Engineering, New Panvel",
+  "Don Bosco Institute of Technology, Mumbai",
+  "Bharatiya Vidya Bhavan's Sardar Patel Institute of Technology, Andheri",
+  "A.C. Patil College of Engineering, Navi Mumbai",
+  "Anjuman-I-Islam's Kalsekar Technical Campus, New Panvel",
+  "Bharati Vidyapeeth's College of Engineering, Navi Mumbai",
+  "D.J. Sanghvi College of Engineering, Vile Parle",
+  "G.H. Raisoni College of Engineering and Management, Pune",
+  "ICPE - Institute of Chemical Technology, Mumbai",
+  "Indira Gandhi Institute of Development & Research, Mumbai",
+  "Jhulelal Institute of Technology, Nagpur",
+  "K.C. College of Engineering, Thane",
+  "L.S. Raheja College of Engineering, Bandra",
+  "M.H. Saboo Siddik College of Engineering, Mumbai",
+  "Mukesh Patel School of Technology Management & Engineering, Mumbai",
+  "N.B. Navale Sinhgad College of Engineering, Pune",
+  "Oriental Institute of Science & Technology, Bhopal",
+  "P.E.S. Modern College of Engineering, Pune",
+  "Rajiv Gandhi Institute of Technology, Mumbai",
+  "Sinhgad College of Engineering, Pune",
+  "Symbiosis Institute of Technology, Pune",
+  "Theem College of Engineering, Boisar",
+  "Universal College of Engineering, Vasai",
+  "Vivekanand Education Society's Institute of Technology, Mumbai",
+  "Watumull Institute of Electronics Engineering & Computer Technology, Mumbai",
+  "Xavier Institute of Engineering, Mumbai",
+  "Yashwantrao Chavan College of Engineering, Nagpur",
+  "Zeal College of Engineering & Research, Pune",
+  "Other"
 ];
 
 function ProfilePage() {
@@ -88,6 +139,13 @@ function ProfilePage() {
     setLoading(true);
     setError("");
     setSuccess("");
+
+    // Validate phone number (should be 10 digits)
+    if (profile.phone && !/^\d{10}$/.test(profile.phone)) {
+      setError("Phone number must be exactly 10 digits");
+      setLoading(false);
+      return;
+    }
     
     const { error: updateError } = await supabase
       .from("users")
@@ -97,6 +155,7 @@ function ProfilePage() {
         branch: profile.branch,
         year: profile.year,
         semester: profile.semester,
+        phone: profile.phone || "",
       })
       .eq("id", profile.id);
       
@@ -279,12 +338,23 @@ function ProfilePage() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <FormSelect
+          <FormInput
+            name="phone"
+            type="tel"
+            placeholder="Phone Number (10 digits)"
+            value={profile.phone || ""}
+            onChange={handleChange}
+            icon={Phone}
+          />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          <FormSearch
             name="college"
             value={profile.college || ""}
             onChange={handleChange}
             icon={Building2}
-            placeholder="Choose your college"
+            placeholder="Select your college"
             options={colleges}
             required
           />

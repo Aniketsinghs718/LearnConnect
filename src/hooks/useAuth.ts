@@ -19,6 +19,7 @@ interface AuthState {
   user: User | null;
   profile: UserProfile | null;
   loading: boolean;
+  isAuthLoading: boolean;
   isAuthenticated: boolean;
 }
 
@@ -26,13 +27,14 @@ export function useAuth(): AuthState {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Initialize auth - Always verify session first, don't rely on localStorage
+    let mounted = true;    // Initialize auth - Always verify session first, don't rely on localStorage
     const initializeAuth = async () => {
       try {
+        setIsAuthLoading(true);
+        
         // Always check session first to prevent auto-login from stale localStorage
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -46,9 +48,10 @@ export function useAuth(): AuthState {
               try {
                 const parsedProfile = JSON.parse(localProfile);
                 // Verify the localStorage profile matches the current user
-                if (parsedProfile.id === session.user.id) {
+                if (parsedProfile && parsedProfile.id === session.user.id) {
                   setProfile(parsedProfile);
                   setLoading(false);
+                  setIsAuthLoading(false);
                 } else {
                   // Profile doesn't match current user, clear and reload
                   localStorage.removeItem('userProfile');
@@ -68,17 +71,17 @@ export function useAuth(): AuthState {
             setUser(null);
             setProfile(null);
             setLoading(false);
+            setIsAuthLoading(false);
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
         if (mounted) {
           setLoading(false);
+          setIsAuthLoading(false);
         }
       }
-    };
-
-    // Listen for auth state changes
+    };    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -97,6 +100,7 @@ export function useAuth(): AuthState {
           setProfile(null);
           localStorage.removeItem('userProfile');
           setLoading(false);
+          setIsAuthLoading(false);
         }
       }
     );
@@ -112,57 +116,83 @@ export function useAuth(): AuthState {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      // Use the safe profile function that creates profile if missing
-      const { data, error } = await supabase
-        .rpc('get_user_profile_safe', { user_id: userId });
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        
-        // Fallback: try direct query and manual creation if needed
-        try {
-          const { data: directData, error: directError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle(); // Use maybeSingle instead of single to avoid error on 0 rows
-
-          if (directError) {
-            console.error('Direct query also failed:', directError);
-            setLoading(false);
-          } else if (directData) {
-            setProfile(directData);
-            localStorage.setItem('userProfile', JSON.stringify(directData));
-            setLoading(false);
-          } else {
-            // No profile exists, this shouldn't happen with the trigger
-            console.warn('No profile found and safe function failed. User needs to re-register.');
-            setLoading(false);
-          }
-        } catch (fallbackError) {
-          console.error('Fallback profile loading failed:', fallbackError);
-          setLoading(false);
-        }
-      } else if (data && data.length > 0) {
-        const profileData = data[0];
-        setProfile(profileData);
-        localStorage.setItem('userProfile', JSON.stringify(profileData));
+      // First try direct query (more reliable)
+      const { data: directData, error: directError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();      if (!directError && directData) {
+        setProfile(directData);
+        localStorage.setItem('userProfile', JSON.stringify(directData));
         setLoading(false);
-      } else {
-        // No profile data returned
-        console.warn('No profile data returned from safe function');
-        setLoading(false);
+        setIsAuthLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Profile loading error:', error);
+
+      // If direct query fails, try the safe function (if it exists)
+      try {
+        const { data, error } = await supabase
+          .rpc('get_user_profile_safe', { user_id: userId });        if (!error && data && data.length > 0) {
+          setProfile(data[0]);
+          localStorage.setItem('userProfile', JSON.stringify(data[0]));
+          setLoading(false);
+          setIsAuthLoading(false);
+          return;
+        }
+      } catch (rpcError) {
+        console.warn('get_user_profile_safe function not available:', rpcError);
+      }
+
+      // If both fail, try to create a minimal profile
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const minimalProfile = {
+          id: userId,
+          name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || 'User',
+          email: userData.user.email || '',
+          college: userData.user.user_metadata?.college || 'Not specified',
+          branch: userData.user.user_metadata?.branch || 'Not specified',
+          year: userData.user.user_metadata?.year || 'Not specified',
+          semester: userData.user.user_metadata?.semester || 'Not specified',
+          phone: '',
+          avatar_url: null,
+          bio: null,
+          preferences: {},
+          is_verified: false,
+          is_active: true,
+          is_admin: false
+        };
+
+        // Try to create the profile
+        const { data: createdData, error: createError } = await supabase
+          .from('users')
+          .insert([minimalProfile])
+          .select()
+          .single();        if (!createError && createdData) {
+          setProfile(createdData);
+          localStorage.setItem('userProfile', JSON.stringify(createdData));
+          setLoading(false);
+          setIsAuthLoading(false);
+          return;
+        } else {
+          console.error('Failed to create profile:', createError);
+        }
+      }      // If everything fails
+      console.warn('Could not load or create user profile. User may need to re-register.');
       setLoading(false);
+      setIsAuthLoading(false);
+      
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+      setLoading(false);
+      setIsAuthLoading(false);
     }
   };
-
   return {
     user,
     profile,
     loading,
+    isAuthLoading,
     isAuthenticated: !!profile
   };
 }

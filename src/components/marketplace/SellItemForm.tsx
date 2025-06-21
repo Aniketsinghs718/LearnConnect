@@ -15,7 +15,8 @@ export const SellItemForm: React.FC = () => {
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);const [formData, setFormData] = useState<CreateItemData>({
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [userPhone, setUserPhone] = useState<string>('');const [formData, setFormData] = useState<CreateItemData>({
     title: '',
     description: '',
     category_id: '',
@@ -51,6 +52,7 @@ export const SellItemForm: React.FC = () => {
           ...prev,
           college_name: profile.college || ''
         }));
+        setUserPhone(profile.phone || '');
         return;
       }
 
@@ -59,15 +61,16 @@ export const SellItemForm: React.FC = () => {
       if (user) {
         const { data: userData } = await supabase
           .from('users')
-          .select('college')
+          .select('college, phone')
           .eq('id', user.id)
           .single();
         
-        if (userData?.college) {
+        if (userData) {
           setFormData(prev => ({
             ...prev,
-            college_name: userData.college
+            college_name: userData.college || ''
           }));
+          setUserPhone(userData.phone || '');
         }
       }
     } catch (error) {
@@ -135,6 +138,18 @@ export const SellItemForm: React.FC = () => {
       return;
     }
 
+    // Check if user has a phone number
+    if (!userPhone || userPhone.trim() === '') {
+      toast.error('Please enter your phone number for WhatsApp contact');
+      return;
+    }
+
+    // Validate phone number format (10 digits)
+    if (!/^\d{10}$/.test(userPhone.trim())) {
+      toast.error('Please enter a valid 10-digit phone number');
+      return;
+    }
+
     if (formData.images.length === 0) {
       toast.error('Please add at least one image');
       return;
@@ -161,7 +176,7 @@ export const SellItemForm: React.FC = () => {
       // Check if user profile exists in database
       const { data: userProfile, error: profileError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, phone')
         .eq('id', user.id)
         .single();
 
@@ -169,6 +184,27 @@ export const SellItemForm: React.FC = () => {
         toast.error('User profile not found. Please complete your registration.');
         router.push('/auth/profile');
         return;
+      }
+
+      // Update user phone number if it has changed
+      if (userPhone && userPhone !== userProfile.phone) {
+        const { error: phoneUpdateError } = await supabase
+          .from('users')
+          .update({ phone: userPhone })
+          .eq('id', user.id);
+
+        if (phoneUpdateError) {
+          console.error('Error updating phone number:', phoneUpdateError);
+          toast.error('Failed to update phone number, but item will still be listed.');
+        } else {
+          // Update localStorage profile if it exists
+          const localProfile = localStorage.getItem("userProfile");
+          if (localProfile) {
+            const profile = JSON.parse(localProfile);
+            profile.phone = userPhone;
+            localStorage.setItem("userProfile", JSON.stringify(profile));
+          }
+        }
       }      console.log('Creating item with user ID:', user.id);
       
       // Create item
@@ -308,6 +344,44 @@ export const SellItemForm: React.FC = () => {
                   placeholder="Auto-filled from your profile..."
                   className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 />
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Phone Number * <span className="text-xs text-gray-500">(Required for WhatsApp contact)</span>
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={userPhone}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                    if (value.length <= 10) {
+                      setUserPhone(value);
+                    }
+                  }}
+                  placeholder="Enter 10-digit phone number"
+                  maxLength={10}
+                  pattern="[0-9]{10}"
+                  required
+                  className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-800 text-white placeholder-gray-400 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                {userPhone && userPhone.length !== 10 && (
+                  <p className="text-xs text-red-400 mt-1">
+                    Phone number must be exactly 10 digits
+                  </p>
+                )}
+                {userPhone && userPhone.length === 10 && (
+                  <p className="text-xs text-green-400 mt-1">
+                    ✓ This phone number will be used for WhatsApp contact
+                  </p>
+                )}
+                {!userPhone && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    This will be saved to your profile for future listings
+                  </p>
+                )}
               </div>
             </div>
 

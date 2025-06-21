@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import AuthLayout from "@/components/layout/AuthLayout";
 import LoginForm from "@/components/forms/LoginForm";
@@ -26,6 +26,18 @@ function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Check for messages from URL parameters (e.g., from registration redirect)
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) {
+      setSuccess(decodeURIComponent(message));
+      // Clear the URL parameter after showing the message
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   // Handle login
   const handleLogin = async (email: string, password: string) => {
@@ -39,7 +51,14 @@ function AuthPage() {
       });
       
       if (signInError) {
-        setError(signInError.message);
+        // Handle specific error messages
+        if (signInError.message.includes('Email not confirmed')) {
+          setError('Please check your email and click the confirmation link before signing in.');
+        } else if (signInError.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else {
+          setError(signInError.message);
+        }
         setLoading(false);
         return;
       }

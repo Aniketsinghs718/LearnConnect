@@ -56,46 +56,60 @@ export async function getUserProfile(userId: string) {
 
 export async function ensureUserProfile(userId: string, email: string) {
   try {
-    // Use the safe database function that creates profile if missing
-    const { data, error } = await supabase
-      .rpc('get_user_profile_safe', { user_id: userId });
-
-    if (error) {
-      throw error;
-    }
-
-    if (data && data.length > 0) {
-      return data[0];
-    }
-
-    // Fallback: try direct query
+    // First try direct query (safer approach)
     const { data: directData, error: directError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    if (directError) {
-      throw directError;
-    }
-
-    if (directData) {
+    if (!directError && directData) {
       return directData;
     }
 
-    // Last resort: create manually
+    // If no profile exists, try to use the safe function (if it exists)
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_profile_safe', { user_id: userId });
+
+      if (!error && data && data.length > 0) {
+        return data[0];
+      }
+    } catch (rpcError) {
+      console.warn('get_user_profile_safe function not available:', rpcError);
+    }
+
+    // Last resort: create manually with minimal data
     const minimalProfile = {
       id: userId,
-      name: email.split('@')[0],
+      name: email.split('@')[0] || 'User',
       email: email,
       college: 'Not specified',
       branch: 'Not specified', 
       year: 'Not specified',
-      semester: 'Not specified'
+      semester: 'Not specified',
+      phone: '',
+      avatar_url: null,
+      bio: null,
+      preferences: {},
+      is_verified: false,
+      is_active: true,
+      is_admin: false
     };
 
-    await createUserProfile(minimalProfile);
-    return await getUserProfile(userId);
+    // Try to create the profile
+    const { data: createdData, error: createError } = await supabase
+      .from('users')
+      .insert([minimalProfile])
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Failed to create profile manually:', createError);
+      throw createError;
+    }
+
+    return createdData;
     
   } catch (error) {
     console.error('ensureUserProfile error:', error);
