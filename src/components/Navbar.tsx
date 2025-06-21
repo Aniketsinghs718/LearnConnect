@@ -38,12 +38,11 @@ const Navbar = () => {
       document.body.style.overflow = 'unset';
     }
 
+    // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
-
-  const closeMenu = () => setIsMenuOpen(false);
 
   const checkAdminStatus = async () => {
     try {
@@ -55,9 +54,21 @@ const Navbar = () => {
     }
   };
 
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   if (!mounted) {
     return null; // Prevent hydration mismatch
   }
+
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Marketplace", href: "/marketplace", icon: "🛒" },
+    { name: "Sell", href: "/marketplace/sell", icon: "📤", highlight: true },
+    { name: "My Items", href: "/marketplace/profile", icon: "👤" }
+  ];
+
   return (
     <>
       <nav className="relative z-50 bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-lg shadow-orange-500/10">
@@ -117,23 +128,23 @@ const Navbar = () => {
               <UserMenu mounted={mounted} />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="relative z-60 p-2 text-gray-300 hover:text-orange-400 transition-all duration-300 rounded-lg hover:bg-white/10 transform hover:scale-110"
+                className="relative z-[60] p-2 text-gray-300 hover:text-orange-400 transition-all duration-300 group"
                 aria-label="Toggle mobile menu"
               >
                 <div className="relative w-6 h-6 flex items-center justify-center">
                   <span 
-                    className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
-                      isMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-1.5'
+                    className={`absolute w-6 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                      isMenuOpen ? 'rotate-45 translate-y-0' : '-translate-y-2'
                     }`}
                   />
                   <span 
-                    className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                    className={`absolute w-6 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
                       isMenuOpen ? 'opacity-0' : 'opacity-100'
                     }`}
                   />
                   <span 
-                    className={`absolute w-5 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
-                      isMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-1.5'
+                    className={`absolute w-6 h-0.5 bg-current transform transition-all duration-300 ease-in-out ${
+                      isMenuOpen ? '-rotate-45 translate-y-0' : 'translate-y-2'
                     }`}
                   />
                 </div>
@@ -143,66 +154,66 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu Backdrop */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
-          onClick={closeMenu}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile Navigation */}
-      <div className={`fixed top-16 md:top-20 left-0 right-0 z-50 md:hidden transition-all duration-300 ease-in-out transform ${
-        isMenuOpen 
-          ? 'translate-y-0 opacity-100 visible' 
-          : '-translate-y-full opacity-0 invisible'
+      {/* Full-Screen Mobile Menu Overlay */}
+      <div className={`md:hidden fixed inset-0 z-[55] transition-all duration-300 ease-in-out ${
+        isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
       }`}>
-        <div className="bg-black/95 backdrop-blur-md border-b border-orange-500/20 shadow-2xl">
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            <div className="space-y-1">
-              <Link
-                href="/"
-                className="flex py-3 px-4 text-white hover:text-orange-400 hover:bg-white/10 transition-all duration-200 font-medium rounded-lg transform hover:scale-105"
-                onClick={closeMenu}
-              >
-                Home
-              </Link>
-              <Link
-                href="/marketplace"
-                className="flex py-3 px-4 text-white hover:text-orange-400 hover:bg-white/10 transition-all duration-200 font-medium items-center space-x-2 rounded-lg transform hover:scale-105"
-                onClick={closeMenu}
-              >
-                <span>🛒</span>
-                <span>Marketplace</span>
-              </Link>
-              <Link
-                href="/marketplace/sell"
-                className="flex py-3 bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-lg transition-all duration-200 font-medium items-center space-x-2 mt-2 transform hover:scale-105"
-                onClick={closeMenu}
-              >
-                <span>📤</span>
-                <span>Sell</span>
-              </Link>
-              <Link
-                href="/marketplace/profile"
-                className="flex py-3 px-4 text-white hover:text-orange-400 hover:bg-white/10 transition-all duration-200 font-medium items-center space-x-2 rounded-lg transform hover:scale-105"
-                onClick={closeMenu}
-              >
-                <span>👤</span>
-                <span>My Items</span>
-              </Link>
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="flex py-3 bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-lg transition-all duration-200 font-medium items-center space-x-2 mt-2 transform hover:scale-105"
-                  onClick={closeMenu}
-                >
-                  <span>🛡️</span>
-                  <span>Admin</span>
-                </Link>
-              )}
+        {/* Background Overlay */}
+        <div 
+          className={`absolute inset-0 bg-black/95 backdrop-blur-md transition-opacity duration-300 ${
+            isMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={closeMenu}
+        />
+        
+        {/* Menu Content */}
+        <div className={`relative z-[56] h-full flex flex-col justify-center items-center transform transition-all duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}>
+          {/* Logo Section */}
+          <div className="mb-16 text-center">
+            <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-white font-bold text-2xl">L</span>
             </div>
+            <h1 className="text-3xl font-bold text-white">LearnConnect</h1>
+            <p className="text-gray-400 mt-2">Student Marketplace</p>
+          </div>
+
+          {/* Navigation Items */}
+          <div className="flex flex-col items-center space-y-8 mb-16">
+            {navItems.map((item, index) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={closeMenu}
+                className={`flex items-center space-x-3 transition-all duration-300 text-2xl font-medium transform hover:scale-105 ${
+                  item.highlight 
+                    ? 'bg-orange-500 text-white px-8 py-4 rounded-2xl hover:bg-orange-600' 
+                    : 'text-white hover:text-orange-400'
+                } ${isMenuOpen ? 'animate-fade-in' : ''}`}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {item.icon && <span className="text-2xl">{item.icon}</span>}
+                <span>{item.name}</span>
+              </Link>
+            ))}
+            
+            {/* Admin Link */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={closeMenu}
+                className="flex items-center space-x-3 bg-orange-500 text-white px-8 py-4 rounded-2xl hover:bg-orange-600 transition-all duration-300 text-2xl font-medium transform hover:scale-105"
+              >
+                <span className="text-2xl">🛡️</span>
+                <span>Admin Panel</span>
+              </Link>
+            )}
+          </div>
+
+          {/* Close Menu Text */}
+          <div className="text-center">
+            <p className="text-gray-400 text-sm">Tap anywhere to close</p>
           </div>
         </div>
       </div>
