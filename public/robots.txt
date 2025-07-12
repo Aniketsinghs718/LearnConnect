@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://learnconnect.minavkaria.tech/sitemap.xml
