@@ -1,7 +1,8 @@
 # 🎓 LearnConnect - Your Ultimate Student Platform
+<img width="871" height="194" alt="Screenshot 2025-05-21 131607" src="https://github.com/user-attachments/assets/28f34170-e618-4208-ae46-8ee7fde25838" />
 
 <div align="center">
-  <img src="./public/logo.png" alt="LearnConnect Logo" width="120" height="120">
+ 
   
   **Free engineering study materials and student marketplace - all in one place!**
   
